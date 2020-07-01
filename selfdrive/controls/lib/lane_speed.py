@@ -86,6 +86,8 @@ class LaneSpeed:
     lane_names = ['left', 'middle', 'right']
     self.lanes = {name: Lane(name, lane_positions[name]) for name in lane_names}
 
+    self.oncoming_lanes = {'left': False, 'right': False}
+
     self.last_alert_end_time = 0
 
   def start(self):
@@ -117,6 +119,7 @@ class LaneSpeed:
       if self.v_ego > self._min_enable_speed:
         # self.filter_tracks()  # todo: will remove tracks very close to other tracks to make averaging more robust
         self.group_tracks()
+        self.find_oncoming_lanes()
         self.get_fastest_lane()
     else:  # should we reset state when not enabled?
       self.reset(reset_fastest=True)
@@ -150,8 +153,18 @@ class LaneSpeed:
       for lane_name in self.lanes:
         lane_bounds = self.lanes[lane_name].bounds + y_offset  # offset lane bounds based on our future lateral position (dPoly) and track's distance
         if lane_bounds[0] >= track.yRel >= lane_bounds[1]:  # track is in a lane
-          self.lanes[lane_name].tracks.append(track)
+          if track.vRel + self.v_ego >= 0:
+            self.lanes[lane_name].tracks.append(track)
+          else:  # if speed < 0 append to oncoming tracks
+            self.lanes[lane_name].oncoming_tracks.append(track)
           break  # skip to next track
+
+  def find_oncoming_lanes(self):
+    """If number of oncoming tracks is greater than tracks going our direction, set lane to oncoming"""
+    for lane in self.oncoming_lanes:
+      lane = self.lanes[lane]
+      if len(lane.oncoming_tracks) > len(lane.tracks):  # 0 can't be > 0 so 0 oncoming tracks will be handled correctly
+        self.oncoming_lanes[lane.name] = True
 
   def lanes_with_avg_speeds(self):
     """Returns a dict of lane objects where avg_speed not None"""
@@ -166,7 +179,7 @@ class LaneSpeed:
       lane = self.lanes[lane_name]
       track_speeds = [track.vRel + self.v_ego for track in lane.tracks]
       track_speeds = [speed for speed in track_speeds if speed > self.v_ego * self._track_speed_margin]
-      if len(track_speeds):  # filters out oncoming tracks and very slow tracks
+      if len(track_speeds):  # filters out very slow tracks
         lane.avg_speed = np.mean(track_speeds)  # todo: something with std?
 
     lanes_with_avg_speeds = self.lanes_with_avg_speeds()
@@ -206,15 +219,19 @@ class LaneSpeed:
       new_fastest = False  # be silent
 
     ls_send = messaging.new_message('laneSpeed')
+    ls_send.laneSpeed.fastestLane = self.fastest_lane
+    ls_send.laneSpeed.new = new_fastest  # only send audible alert once when a lane becomes fastest, then continue to show silent alert
+
     ls_send.laneSpeed.leftLaneSpeeds = [trk.vRel + self.v_ego for trk in self.lanes['left'].tracks]
     ls_send.laneSpeed.middleLaneSpeeds = [trk.vRel + self.v_ego for trk in self.lanes['middle'].tracks]
     ls_send.laneSpeed.rightLaneSpeeds = [trk.vRel + self.v_ego for trk in self.lanes['right'].tracks]
+
     ls_send.laneSpeed.leftLaneDistances = [trk.dRel for trk in self.lanes['left'].tracks]
     ls_send.laneSpeed.middleLaneDistances = [trk.dRel for trk in self.lanes['middle'].tracks]
     ls_send.laneSpeed.rightLaneDistances = [trk.dRel for trk in self.lanes['right'].tracks]
 
-    ls_send.laneSpeed.fastestLane = self.fastest_lane
-    ls_send.laneSpeed.new = new_fastest  # only send audible alert once when a lane becomes fastest, then continue to show silent alert
+    ls_send.laneSpeed.leftLaneOncoming = self.oncoming_lanes['left']
+    ls_send.laneSpeed.rightLaneOncoming = self.oncoming_lanes['right']
 
     if self.last_ls_state != self.ls_state:  # show alert if button tapped and write to opParams
       self.op_params.put('lane_speed_alerts', LaneSpeedState.to_state[self.ls_state])
@@ -239,6 +256,9 @@ class LaneSpeed:
       if reset_tracks:
         self.lanes[lane].tracks = []
         self.lanes[lane].oncoming_tracks = []
+
+        if lane in self.oncoming_lanes:  # reset oncoming lanes as well
+          self.oncoming_lanes[lane] = False
 
       if reset_avg_speed:
         self.lanes[lane].avg_speed = None

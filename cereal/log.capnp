@@ -1990,6 +1990,9 @@ struct LaneSpeed {
   leftLaneDistances @6 :List(Float32);
   middleLaneDistances @7 :List(Float32);
   rightLaneDistances @8 :List(Float32);
+
+  leftLaneOncoming @9 :Bool;
+  rightLaneOncoming @10 :Bool;
 }
 
 struct LaneSpeedButton {
