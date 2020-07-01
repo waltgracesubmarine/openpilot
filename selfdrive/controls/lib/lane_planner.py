@@ -2,8 +2,7 @@ from common.op_params import opParams
 from common.numpy_fast import interp
 import numpy as np
 from cereal import log
-
-op_params = opParams()
+from cereal.messaging import SubMaster
 
 
 def compute_path_pinv(l=50):
@@ -46,6 +45,34 @@ def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego):
   return lr_prob * d_poly_lane + (1.0 - lr_prob) * p_poly
 
 
+class DynamicCameraOffset:
+  def __init__(self):
+    self.sm = SubMaster(['laneSpeed'])
+    self.op_params = opParams()
+    self.camera_offset = self.op_params.get('camera_offset', 0.06)
+    self.leftLaneOncoming = False
+    self.rightLaneOncoming = False
+    self.offset_mod = 0.06  # could be tuned/changed dynamically
+
+  def update(self, v_ego):
+    self.sm.update(0)
+    self.camera_offset = self.op_params.get('camera_offset', 0.06)
+    self.leftLaneOncoming = self.sm['laneSpeed'].leftLaneOncoming
+    self.rightLaneOncoming = self.sm['laneSpeed'].rightLaneOncoming
+    if v_ego < 24.5872:  # 55 mph
+      return self.camera_offset
+    return self._get_camera_offset
+
+  @property
+  def _get_camera_offset(self):
+    if self.leftLaneOncoming == self.rightLaneOncoming:  # if both false or both true do nothing
+      return self.camera_offset
+    if self.leftLaneOncoming:
+      return self.camera_offset - self.offset_mod
+    else:  # right lane oncoming
+      return self.camera_offset + self.offset_mod
+
+
 class LanePlanner():
   def __init__(self):
     self.l_poly = [0., 0., 0., 0.]
@@ -65,6 +92,7 @@ class LanePlanner():
 
     self._path_pinv = compute_path_pinv()
     self.x_points = np.arange(50)
+    self.dynamic_camera_offset = DynamicCameraOffset()
 
   def parse_model(self, md):
     if len(md.leftLane.poly):
@@ -83,10 +111,11 @@ class LanePlanner():
       self.r_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeRight - 1]
 
   def update_d_poly(self, v_ego):
-    # only offset left and right lane lines; offsetting p_poly does not make sense
-    CAMERA_OFFSET = op_params.get('camera_offset', 0.06)
+    # only offset left and right lane lines; offsetting p_poly does not make sense (or does it?)
+    CAMERA_OFFSET = self.dynamic_camera_offset.update(v_ego)
     self.l_poly[3] += CAMERA_OFFSET
     self.r_poly[3] += CAMERA_OFFSET
+    self.p_poly[3] += CAMERA_OFFSET
 
     # Find current lanewidth
     self.lane_width_certainty += 0.05 * (self.l_prob * self.r_prob - self.lane_width_certainty)
