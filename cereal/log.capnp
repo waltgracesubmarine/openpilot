@@ -1999,6 +1999,11 @@ struct LaneSpeedButton {
   status @0 :UInt16;
 }
 
+struct DynamicCameraOffset {
+  keepingLeft @0 :Bool;
+  keepingRight @1 :Bool;
+}
+
 struct Event {
   # in nanoseconds?
   logMonoTime @0 :UInt64;
@@ -2082,5 +2087,6 @@ struct Event {
     dynamicFollowButton @75 :DynamicFollowButton;
     laneSpeed @76 :LaneSpeed;
     laneSpeedButton @77 :LaneSpeedButton;
+    dynamicCameraOffset @78 :DynamicCameraOffset;
   }
 }

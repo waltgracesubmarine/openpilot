@@ -2,7 +2,8 @@ import numpy as np
 from common.op_params import opParams
 from common.numpy_fast import interp
 from cereal import log
-from cereal.messaging import SubMaster
+from cereal import messaging
+from cereal.messaging import SubMaster, PubMaster
 from selfdrive.config import Conversions as CV
 
 
@@ -49,6 +50,7 @@ def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego):
 class DynamicCameraOffset:
   def __init__(self):
     self.sm = SubMaster(['laneSpeed'])
+    self.pm = PubMaster(['dynamicCameraOffset'])
     self.op_params = opParams()
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = False
@@ -65,25 +67,39 @@ class DynamicCameraOffset:
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = self.sm['laneSpeed'].leftLaneOncoming
     self.rightLaneOncoming = self.sm['laneSpeed'].rightLaneOncoming
+    self.keeping_left, self.keeping_right = False, False  # reset keeping
+
+    dynamic_offset = self._get_camera_offset(lane_width_estimate, lane_width_certainty, l_prob, r_prob)
+    self._send_state()  # for alerts, before speed check so alerts don't get stuck on
+
     if v_ego < 50 * CV.MPH_TO_MS:
       return self.camera_offset
-    return self._get_camera_offset(lane_width_estimate, lane_width_certainty, l_prob, r_prob)
+
+    if dynamic_offset is not None:
+      return dynamic_offset
+    return self.camera_offset  # don't offset if no lane line in direction we're going to hug
+
+  def _send_state(self):
+    dco_send = messaging.new_message('dynamicCameraOffset')
+    dco_send.keepingLeft = self.keeping_left
+    dco_send.keepingRight = self.keeping_right
+    self.pm.send('dynamicCameraOffset', dco_send)
 
   def _get_camera_offset(self, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
     if self.leftLaneOncoming == self.rightLaneOncoming:  # if both false or both true do nothing
-      return self.camera_offset
-
+      return
     # calculate lane width from certainty and standard lane width for offset
     # if not certain, err to standard lane width
     lane_width = (lane_width_estimate * lane_width_certainty) + (self.standard_lane_width * (1 - lane_width_certainty))
     offset = np.interp(lane_width, self.lane_widths, self.offsets)
     if self.leftLaneOncoming:
       if r_prob >= self.min_poly_prob:  # make sure there's a lane line on the side we're going to hug
+        self.keeping_right = True
         return self.camera_offset - offset
     else:  # right lane oncoming
       if l_prob >= self.min_poly_prob:  # don't want to offset if there's no left/right lane line and we go off the road for ex.
+        self.keeping_left = True
         return self.camera_offset + offset
-    return self.camera_offset  # don't offset if no lane line in direction we're going to hug
 
 
 class LanePlanner():
