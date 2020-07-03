@@ -1,8 +1,9 @@
+import numpy as np
 from common.op_params import opParams
 from common.numpy_fast import interp
-import numpy as np
 from cereal import log
 from cereal.messaging import SubMaster
+from selfdrive.config import Conversions as CV
 
 
 def compute_path_pinv(l=50):
@@ -52,32 +53,37 @@ class DynamicCameraOffset:
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = False
     self.rightLaneOncoming = False
-    self.offset_mod = 0.3  # could be tuned/changed dynamically
+
+    self.standard_lane_width = 3.7
+    self.lane_widths = [2.8, self.standard_lane_width, 4.6]
+    self.offsets = [0.03, 0.3, 0.36]  # needs to be tested and/or tuned
+
     self.min_poly_prob = 0.7  # lane line must exist in direction we're offsetting towards
 
-  def update(self, v_ego, lane_width, lane_width_certainty, l_prob, r_prob):
+  def update(self, v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
     self.sm.update(0)
-    self.lane_width = lane_width  # for calculating offset mod
-    self.lane_width_certainty = lane_width_certainty
-    self.l_prob = l_prob  # for calculating whether to use offset mod
-    self.r_prob = r_prob
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = self.sm['laneSpeed'].leftLaneOncoming
     self.rightLaneOncoming = self.sm['laneSpeed'].rightLaneOncoming
-    if v_ego < 24.5872/2:  # 55 mph
+    if v_ego < 50 * CV.MPH_TO_MS:
       return self.camera_offset
-    return self._get_camera_offset
+    return self._get_camera_offset(lane_width_estimate, lane_width_certainty, l_prob, r_prob)
 
-  @property
-  def _get_camera_offset(self):
+  def _get_camera_offset(self, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
     if self.leftLaneOncoming == self.rightLaneOncoming:  # if both false or both true do nothing
       return self.camera_offset
+
+    # calculate lane width from certainty and standard lane width for offset
+    # if not certain, err to standard lane width
+    lane_width = (lane_width_estimate * lane_width_certainty) + (self.standard_lane_width * (1 - lane_width_certainty))
+    offset = np.interp(lane_width, self.lane_widths, self.offsets)
     if self.leftLaneOncoming:
-      if self.r_prob > self.min_poly_prob:  # make sure there's a lane line on the side we're going to hug
-        return self.camera_offset - self.offset_mod
+      if r_prob >= self.min_poly_prob:  # make sure there's a lane line on the side we're going to hug
+        return self.camera_offset - offset
     else:  # right lane oncoming
-      if self.l_prob > self.min_poly_prob:  # don't want to offset if there's no left/right lane line and we go off the road for ex.
-        return self.camera_offset + self.offset_mod
+      if l_prob >= self.min_poly_prob:  # don't want to offset if there's no left/right lane line and we go off the road for ex.
+        return self.camera_offset + offset
+    return self.camera_offset  # don't offset if no lane line in direction we're going to hug
 
 
 class LanePlanner():
