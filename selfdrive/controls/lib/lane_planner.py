@@ -52,7 +52,7 @@ class DynamicCameraOffset:
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = False
     self.rightLaneOncoming = False
-    self.offset_mod = 0.15  # could be tuned/changed dynamically
+    self.offset_mod = 0.45  # could be tuned/changed dynamically
 
   def update(self, v_ego):
     self.sm.update(0)
