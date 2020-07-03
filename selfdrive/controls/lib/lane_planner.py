@@ -53,9 +53,14 @@ class DynamicCameraOffset:
     self.leftLaneOncoming = False
     self.rightLaneOncoming = False
     self.offset_mod = 0.3  # could be tuned/changed dynamically
+    self.min_poly_prob = 0.7  # lane line must exist in direction we're offsetting towards
 
-  def update(self, v_ego):
+  def update(self, v_ego, lane_width, lane_width_certainty, l_prob, r_prob):
     self.sm.update(0)
+    self.lane_width = lane_width  # for calculating offset mod
+    self.lane_width_certainty = lane_width_certainty
+    self.l_prob = l_prob  # for calculating whether to use offset mod
+    self.r_prob = r_prob
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = self.sm['laneSpeed'].leftLaneOncoming
     self.rightLaneOncoming = self.sm['laneSpeed'].rightLaneOncoming
@@ -68,9 +73,11 @@ class DynamicCameraOffset:
     if self.leftLaneOncoming == self.rightLaneOncoming:  # if both false or both true do nothing
       return self.camera_offset
     if self.leftLaneOncoming:
-      return self.camera_offset - self.offset_mod
+      if self.r_prob > self.min_poly_prob:  # make sure there's a lane line on the side we're going to hug
+        return self.camera_offset - self.offset_mod
     else:  # right lane oncoming
-      return self.camera_offset + self.offset_mod
+      if self.l_prob > self.min_poly_prob:  # don't want to offset if there's no left/right lane line and we go off the road for ex.
+        return self.camera_offset + self.offset_mod
 
 
 class LanePlanner():
@@ -112,7 +119,7 @@ class LanePlanner():
 
   def update_d_poly(self, v_ego):
     # only offset left and right lane lines; offsetting p_poly does not make sense (or does it?)
-    CAMERA_OFFSET = self.dynamic_camera_offset.update(v_ego)
+    CAMERA_OFFSET = self.dynamic_camera_offset.update(v_ego, self.lane_width, self.lane_width_certainty, self.l_prob, self.r_prob)
     self.l_poly[3] += CAMERA_OFFSET
     self.r_poly[3] += CAMERA_OFFSET
     self.p_poly[3] += CAMERA_OFFSET
