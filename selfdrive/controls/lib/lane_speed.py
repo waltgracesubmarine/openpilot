@@ -155,7 +155,7 @@ class LaneSpeed:
         if lane_bounds[0] >= track.yRel >= lane_bounds[1]:  # track is in a lane
           if track.vRel + self.v_ego >= 0:
             self.lanes[lane_name].tracks.append(track)
-          else:  # if speed < 0 append to oncoming tracks
+          elif track.vRel + self.v_ego <= -1:  # make sure we don't add stopped tracks at high speeds
             self.lanes[lane_name].oncoming_tracks.append(track)
           break  # skip to next track
 
