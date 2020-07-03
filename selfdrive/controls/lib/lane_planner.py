@@ -59,7 +59,7 @@ class DynamicCameraOffset:
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = self.sm['laneSpeed'].leftLaneOncoming
     self.rightLaneOncoming = self.sm['laneSpeed'].rightLaneOncoming
-    if v_ego < 24.5872:  # 55 mph
+    if v_ego < 24.5872/2:  # 55 mph
       return self.camera_offset
     return self._get_camera_offset
 
