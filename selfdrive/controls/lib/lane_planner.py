@@ -56,8 +56,9 @@ class DynamicCameraOffset:
     self.leftLaneOncoming = False
     self.rightLaneOncoming = False
 
-    self.standard_lane_width = 3.7
-    self.lane_widths = [2.8, self.standard_lane_width, 4.6]
+    standard_lane_width = 3.7
+    self.lane_widths = [2.8, standard_lane_width, 4.6]
+    self.uncertain_lane_width = (self.lane_widths[0] + standard_lane_width) / 2  # if uncertain, apply less offset
     self.offsets = [0.03, 0.3, 0.36]  # needs to be tested and/or tuned
 
     self.min_poly_prob = 0.7  # lane line must exist in direction we're offsetting towards
@@ -89,8 +90,8 @@ class DynamicCameraOffset:
     if self.leftLaneOncoming == self.rightLaneOncoming:  # if both false or both true do nothing
       return
     # calculate lane width from certainty and standard lane width for offset
-    # if not certain, err to standard lane width
-    lane_width = (lane_width_estimate * lane_width_certainty) + (self.standard_lane_width * (1 - lane_width_certainty))
+    # if not certain, err to smaller lane width to avoid too much offset
+    lane_width = (lane_width_estimate * lane_width_certainty) + (self.uncertain_lane_width * (1 - lane_width_certainty))
     offset = np.interp(lane_width, self.lane_widths, self.offsets)
     if self.leftLaneOncoming:
       if r_prob >= self.min_poly_prob:  # make sure there's a lane line on the side we're going to hug
