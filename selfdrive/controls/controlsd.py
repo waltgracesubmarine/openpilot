@@ -159,10 +159,10 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
   can_show_alerts = True  # alert priority is defined by code location, keeping is highest, then lane speed alert, then auto-df alert
   if sm_smiskol['dynamicCameraOffset'].keepingLeft:
     can_show_alerts = False
-    AM.add(frame, 'laneSpeedKeeping', enabled, extra_text_1='LEFT', extra_text_2='Oncoming traffic in left lane')
+    AM.add(frame, 'laneSpeedKeeping', enabled, extra_text_1='LEFT', extra_text_2='Oncoming traffic in right lane')
   elif sm_smiskol['dynamicCameraOffset'].keepingRight:
     can_show_alerts = False
-    AM.add(frame, 'laneSpeedKeeping', enabled, extra_text_1='RIGHT', extra_text_2='Oncoming traffic in right lane')
+    AM.add(frame, 'laneSpeedKeeping', enabled, extra_text_1='RIGHT', extra_text_2='Oncoming traffic in left lane')
 
   ls_state = sm_smiskol['laneSpeed'].state
   if ls_state != '':

@@ -69,7 +69,6 @@ class DynamicCameraOffset:
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = self.sm['laneSpeed'].leftLaneOncoming
     self.rightLaneOncoming = self.sm['laneSpeed'].rightLaneOncoming
-    self.keeping_left, self.keeping_right = False, False  # reset keeping
 
     dynamic_offset = self._get_camera_offset(v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob)
     self._send_state()  # for alerts, before speed check so alerts don't get stuck on
@@ -84,6 +83,7 @@ class DynamicCameraOffset:
     self.pm.send('dynamicCameraOffset', dco_send)
 
   def _get_camera_offset(self, v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
+    self.keeping_left, self.keeping_right = False, False  # reset keeping
     if self.leftLaneOncoming == self.rightLaneOncoming:  # if both false or both true do nothing
       return
     if v_ego < self.min_enable_speed:
