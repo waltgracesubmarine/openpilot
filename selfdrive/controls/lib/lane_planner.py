@@ -55,13 +55,14 @@ class DynamicCameraOffset:
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = False
     self.rightLaneOncoming = False
+    self.min_enable_speed = 50 * CV.MPH_TO_MS
 
     standard_lane_width = 3.7
     self.lane_widths = [2.8, standard_lane_width, 4.6]
     self.uncertain_lane_width = (self.lane_widths[0] + standard_lane_width) / 2  # if uncertain, apply less offset
     self.offsets = [0.03, 0.3, 0.36]  # needs to be tested and/or tuned
 
-    self.min_poly_prob = 0.2  # lane line must exist in direction we're offsetting towards
+    self.min_poly_prob = 0.5  # lane line must exist in direction we're offsetting towards
 
   def update(self, v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
     self.sm.update(0)
@@ -69,15 +70,9 @@ class DynamicCameraOffset:
     self.leftLaneOncoming = self.sm['laneSpeed'].leftLaneOncoming
     self.rightLaneOncoming = self.sm['laneSpeed'].rightLaneOncoming
     self.keeping_left, self.keeping_right = False, False  # reset keeping
-    print('leftLaneOncoming: {}'.format(self.leftLaneOncoming))
 
-    dynamic_offset = self._get_camera_offset(lane_width_estimate, lane_width_certainty, l_prob, r_prob)
-    print('dynamic offset: {}'.format(dynamic_offset))
+    dynamic_offset = self._get_camera_offset(v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob)
     self._send_state()  # for alerts, before speed check so alerts don't get stuck on
-
-    if v_ego < 50 * CV.MPH_TO_MS:
-      return self.camera_offset
-
     if dynamic_offset is not None:
       return dynamic_offset
     return self.camera_offset  # don't offset if no lane line in direction we're going to hug
@@ -88,8 +83,10 @@ class DynamicCameraOffset:
     dco_send.dynamicCameraOffset.keepingRight = self.keeping_right
     self.pm.send('dynamicCameraOffset', dco_send)
 
-  def _get_camera_offset(self, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
+  def _get_camera_offset(self, v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
     if self.leftLaneOncoming == self.rightLaneOncoming:  # if both false or both true do nothing
+      return
+    if v_ego < self.min_enable_speed:
       return
     # calculate lane width from certainty and standard lane width for offset
     # if not certain, err to smaller lane width to avoid too much offset
