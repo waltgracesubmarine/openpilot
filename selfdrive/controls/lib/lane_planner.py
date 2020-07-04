@@ -82,8 +82,8 @@ class DynamicCameraOffset:
 
   def _send_state(self):
     dco_send = messaging.new_message('dynamicCameraOffset')
-    dco_send.keepingLeft = self.keeping_left
-    dco_send.keepingRight = self.keeping_right
+    dco_send.dynamicCameraOffset.keepingLeft = self.keeping_left
+    dco_send.dynamicCameraOffset.keepingRight = self.keeping_right
     self.pm.send('dynamicCameraOffset', dco_send)
 
   def _get_camera_offset(self, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
