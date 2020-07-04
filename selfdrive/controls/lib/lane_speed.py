@@ -103,6 +103,7 @@ class LaneSpeed:
       self.update_lane_bounds()
       self.update()
       self.send_status()
+      self.log_data()
 
       t_sleep = LANE_SPEED_RATE - (sec_since_boot() - t_start)
       if t_sleep > 0:
@@ -212,6 +213,21 @@ class LaneSpeed:
 
     # if here, we've found a lane faster than our lane by a margin and it's been faster for long enough
     self.fastest_lane = fastest_lane.name
+
+  def log_data(self):
+    log_file = '/data/lane_speed_log'
+    lanes_tracks = {}
+    lanes_oncoming_tracks = {}
+    bounds = {}
+    for lane in self.lanes:
+      bounds[lane] = self.lanes[lane].bounds
+      lanes_tracks[lane] = [{'vRel': trk.vRel, 'dRel': trk.dRel, 'yRel': trk.yRel} for trk in self.lanes[lane].tracks]
+      lanes_oncoming_tracks[lane] = [{'vRel': trk.vRel, 'dRel': trk.dRel, 'yRel': trk.yRel} for trk in self.lanes[lane].oncoming_tracks]
+
+    log_data = {'v_ego': self.v_ego, 'd_poly': self.d_poly, 'lane_tracks': lanes_tracks, 'lane_oncoming_tracks': lanes_oncoming_tracks,
+                'live_tracks': self.live_tracks, 'oncoming_lanes': self.oncoming_lanes, 'bounds': bounds}
+    with open(log_file, 'a') as f:
+      f.write('{}\n'.format(log_data))
 
   def send_status(self):
     new_fastest = self.fastest_lane in ['left', 'right'] and self.last_fastest_lane not in ['left', 'right']
