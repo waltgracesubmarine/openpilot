@@ -121,6 +121,7 @@ class LaneSpeed:
         # self.filter_tracks()  # todo: will remove tracks very close to other tracks to make averaging more robust
         self.group_tracks()
         self.find_oncoming_lanes()
+        print('leftLaneOncoming: {}'.format(self.oncoming_lanes['left']))
         self.get_fastest_lane()
     else:  # should we reset state when not enabled?
       self.reset(reset_fastest=True)
