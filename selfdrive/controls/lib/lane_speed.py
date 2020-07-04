@@ -153,9 +153,9 @@ class LaneSpeed:
       for lane_name in self.lanes:
         lane_bounds = self.lanes[lane_name].bounds + y_offset  # offset lane bounds based on our future lateral position (dPoly) and track's distance
         if lane_bounds[0] >= track.yRel >= lane_bounds[1]:  # track is in a lane
-          if track.vRel + self.v_ego >= 1:
+          if track.vRel + self.v_ego >= 2:
             self.lanes[lane_name].tracks.append(track)
-          elif track.vRel + self.v_ego <= -1:  # make sure we don't add stopped tracks at high speeds
+          elif track.vRel + self.v_ego <= -2:  # make sure we don't add stopped tracks at high speeds
             self.lanes[lane_name].oncoming_tracks.append(track)
           break  # skip to next track
 
@@ -163,6 +163,7 @@ class LaneSpeed:
     """If number of oncoming tracks is greater than tracks going our direction, set lane to oncoming"""
     for lane in self.oncoming_lanes:
       lane = self.lanes[lane]
+      self.oncoming_lanes[lane.name] = False
       if len(lane.oncoming_tracks) > len(lane.tracks):  # 0 can't be > 0 so 0 oncoming tracks will be handled correctly
         self.oncoming_lanes[lane.name] = True
 
@@ -257,8 +258,8 @@ class LaneSpeed:
         self.lanes[lane].tracks = []
         self.lanes[lane].oncoming_tracks = []
 
-        if lane in self.oncoming_lanes:  # reset oncoming lanes as well
-          self.oncoming_lanes[lane] = False
+        # if lane in self.oncoming_lanes:  # reset oncoming lanes as well
+        #   self.oncoming_lanes[lane] = False
 
       if reset_avg_speed:
         self.lanes[lane].avg_speed = None
