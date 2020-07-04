@@ -137,7 +137,7 @@ class LaneSpeed:
     self.lanes['middle'].bounds = np.array([self.lanes['left'].pos / 2, self.lanes['right'].pos / 2])
     self.lanes['right'].bounds = np.array([self.lanes['right'].pos / 2, self.lanes['right'].pos * 1.5])
 
-  # def filter_tracks(self):  # fixme: make cluster() return indexes of live_tracks instead
+  # def filter_tracks(self):  # todo: make cluster() return indexes of live_tracks instead
   #   print(type(self.live_tracks))
   #   clustered = cluster(self.live_tracks, 0.048)  # clusters tracks based on dRel
   #   clustered = [clstr for clstr in clustered if len(clstr) > 1]
@@ -153,19 +153,18 @@ class LaneSpeed:
       for lane_name in self.lanes:
         lane_bounds = self.lanes[lane_name].bounds + y_offset  # offset lane bounds based on our future lateral position (dPoly) and track's distance
         if lane_bounds[0] >= track.yRel >= lane_bounds[1]:  # track is in a lane
-          if track.vRel + self.v_ego >= 2:
+          if track.vRel + self.v_ego >= 1:
             self.lanes[lane_name].tracks.append(track)
-          elif track.vRel + self.v_ego <= -2:  # make sure we don't add stopped tracks at high speeds
+          elif track.vRel + self.v_ego <= -1:  # make sure we don't add stopped tracks at high speeds
             self.lanes[lane_name].oncoming_tracks.append(track)
           break  # skip to next track
 
   def find_oncoming_lanes(self):
     """If number of oncoming tracks is greater than tracks going our direction, set lane to oncoming"""
     for lane in self.oncoming_lanes:
-      lane = self.lanes[lane]
-      self.oncoming_lanes[lane.name] = False
-      if len(lane.oncoming_tracks) > len(lane.tracks):  # 0 can't be > 0 so 0 oncoming tracks will be handled correctly
-        self.oncoming_lanes[lane.name] = True
+      self.oncoming_lanes[lane] = False
+      if len(self.lanes[lane].oncoming_tracks) > len(self.lanes[lane].tracks):  # 0 can't be > 0 so 0 oncoming tracks will be handled correctly
+        self.oncoming_lanes[lane] = True
 
   def lanes_with_avg_speeds(self):
     """Returns a dict of lane objects where avg_speed not None"""
@@ -257,9 +256,6 @@ class LaneSpeed:
       if reset_tracks:
         self.lanes[lane].tracks = []
         self.lanes[lane].oncoming_tracks = []
-
-        # if lane in self.oncoming_lanes:  # reset oncoming lanes as well
-        #   self.oncoming_lanes[lane] = False
 
       if reset_avg_speed:
         self.lanes[lane].avg_speed = None
