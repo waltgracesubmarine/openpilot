@@ -61,7 +61,7 @@ class DynamicCameraOffset:
     self.uncertain_lane_width = (self.lane_widths[0] + standard_lane_width) / 2  # if uncertain, apply less offset
     self.offsets = [0.03, 0.3, 0.36]  # needs to be tested and/or tuned
 
-    self.min_poly_prob = 0.7  # lane line must exist in direction we're offsetting towards
+    self.min_poly_prob = 0.2  # lane line must exist in direction we're offsetting towards
 
   def update(self, v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
     self.sm.update(0)
@@ -69,8 +69,10 @@ class DynamicCameraOffset:
     self.leftLaneOncoming = self.sm['laneSpeed'].leftLaneOncoming
     self.rightLaneOncoming = self.sm['laneSpeed'].rightLaneOncoming
     self.keeping_left, self.keeping_right = False, False  # reset keeping
+    print('leftLaneOncoming: {}'.format(self.leftLaneOncoming))
 
     dynamic_offset = self._get_camera_offset(lane_width_estimate, lane_width_certainty, l_prob, r_prob)
+    print('dynamic offset: {}'.format(dynamic_offset))
     self._send_state()  # for alerts, before speed check so alerts don't get stuck on
 
     if v_ego < 50 * CV.MPH_TO_MS:
