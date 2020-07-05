@@ -55,7 +55,7 @@ class DynamicCameraOffset:
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = False
     self.rightLaneOncoming = False
-    self.min_enable_speed = 24 * CV.MPH_TO_MS
+    self.min_enable_speed = 25 * CV.MPH_TO_MS
 
     standard_lane_width = 3.7
     self.lane_widths = [2.8, standard_lane_width, 4.6]
