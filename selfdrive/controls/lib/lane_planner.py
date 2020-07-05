@@ -60,7 +60,7 @@ class DynamicCameraOffset:
     standard_lane_width = 3.7
     self.lane_widths = [2.8, standard_lane_width, 4.6]
     self.uncertain_lane_width = (self.lane_widths[0] + standard_lane_width) / 2  # if uncertain, apply less offset
-    self.offsets = [0.03, 0.3, 0.36]  # needs to be tested and/or tuned
+    self.offsets = [0.03*1.1, 0.3*1.25, 0.36*1.25]  # needs to be tested and/or tuned
 
     self.min_poly_prob = 0.65  # lane line must exist in direction we're offsetting towards
 
