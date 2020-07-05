@@ -55,14 +55,14 @@ class DynamicCameraOffset:
     self.camera_offset = self.op_params.get('camera_offset', 0.06)
     self.leftLaneOncoming = False
     self.rightLaneOncoming = False
-    self.min_enable_speed = 40 * CV.MPH_TO_MS
+    self.min_enable_speed = 45 * CV.MPH_TO_MS
 
     standard_lane_width = 3.7
     self.lane_widths = [2.8, standard_lane_width, 4.6]
     self.uncertain_lane_width = (self.lane_widths[0] + standard_lane_width) / 2  # if uncertain, apply less offset
     self.offsets = [0.03, 0.3, 0.36]  # needs to be tested and/or tuned
 
-    self.min_poly_prob = 0.5  # lane line must exist in direction we're offsetting towards
+    self.min_poly_prob = 0.65  # lane line must exist in direction we're offsetting towards
 
   def update(self, v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
     self.sm.update(0)

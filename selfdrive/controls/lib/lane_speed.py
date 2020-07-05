@@ -103,7 +103,6 @@ class LaneSpeed:
       self.update_lane_bounds()
       self.update()
       self.send_status()
-      self.log_data()
 
       t_sleep = LANE_SPEED_RATE - (sec_since_boot() - t_start)
       if t_sleep > 0:
@@ -120,7 +119,6 @@ class LaneSpeed:
       # self.filter_tracks()  # todo: will remove tracks very close to other tracks to make averaging more robust
       self.group_tracks()
       self.find_oncoming_lanes()
-      print('leftLaneOncoming: {}'.format(self.oncoming_lanes['left']))
       self.get_fastest_lane()
     else:
       self.reset(reset_fastest=True)
@@ -214,20 +212,20 @@ class LaneSpeed:
     # if here, we've found a lane faster than our lane by a margin and it's been faster for long enough
     self.fastest_lane = fastest_lane.name
 
-  def log_data(self):
-    log_file = '/data/lane_speed_log'
-    lanes_tracks = {}
-    lanes_oncoming_tracks = {}
-    bounds = {}
-    for lane in self.lanes:
-      bounds[lane] = self.lanes[lane].bounds
-      lanes_tracks[lane] = [{'vRel': trk.vRel, 'dRel': trk.dRel, 'yRel': trk.yRel} for trk in self.lanes[lane].tracks]
-      lanes_oncoming_tracks[lane] = [{'vRel': trk.vRel, 'dRel': trk.dRel, 'yRel': trk.yRel} for trk in self.lanes[lane].oncoming_tracks]
-
-    log_data = {'v_ego': self.v_ego, 'd_poly': self.d_poly, 'lane_tracks': lanes_tracks, 'lane_oncoming_tracks': lanes_oncoming_tracks,
-                'live_tracks': self.live_tracks, 'oncoming_lanes': self.oncoming_lanes, 'bounds': bounds}
-    with open(log_file, 'a') as f:
-      f.write('{}\n'.format(log_data))
+  # def log_data(self):  # DON'T USE AGAIN until I fix live tracks formatting
+  #   log_file = '/data/lane_speed_log'
+  #   lanes_tracks = {}
+  #   lanes_oncoming_tracks = {}
+  #   bounds = {}
+  #   for lane in self.lanes:
+  #     bounds[lane] = self.lanes[lane].bounds
+  #     lanes_tracks[lane] = [{'vRel': trk.vRel, 'dRel': trk.dRel, 'yRel': trk.yRel} for trk in self.lanes[lane].tracks]
+  #     lanes_oncoming_tracks[lane] = [{'vRel': trk.vRel, 'dRel': trk.dRel, 'yRel': trk.yRel} for trk in self.lanes[lane].oncoming_tracks]
+  #
+  #   log_data = {'v_ego': self.v_ego, 'd_poly': self.d_poly, 'lane_tracks': lanes_tracks, 'lane_oncoming_tracks': lanes_oncoming_tracks,
+  #               'live_tracks': self.live_tracks, 'oncoming_lanes': self.oncoming_lanes, 'bounds': bounds}
+  #   with open(log_file, 'a') as f:
+  #     f.write('{}\n'.format(log_data))
 
   def send_status(self):
     new_fastest = self.fastest_lane in ['left', 'right'] and self.last_fastest_lane not in ['left', 'right']
@@ -279,11 +277,6 @@ class LaneSpeed:
       if reset_fastest:
         self.lanes[lane].fastest_count = 0
 
-  # def log_data(self):
-  #   live_tracks = [{'vRel': trk.vRel, 'yRel': trk.yRel, 'dRel': trk.dRel} for trk in self.live_tracks]
-  #   with open('/data/lane_speed', 'a') as f:
-  #     f.write('{}\n'.format({'v_ego': self.v_ego, 'd_poly': self.d_poly, 'steer_angle': self.steer_angle, 'live_tracks': live_tracks}))
-
 
 # class Track:
 #   def __init__(self, vRel, yRel, dRel):
@@ -300,55 +293,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-
-
-# DEBUG = False
-#
-# if DEBUG:
-#   def circle_y(_x, _angle):  # fixme: not sure if this is correct
-#     return -(_x * _angle) ** 2 / (1000 * (_angle * 2))
-#
-#   ls = LaneSpeed()
-#
-#   class Track:
-#     def __init__(self, vRel, yRel, dRel):
-#       self.vRel = vRel
-#       self.yRel = yRel
-#       self.dRel = dRel
-#
-#   d_poly = [3.2945357553160193e-10, -0.0009911218658089638, -0.009723401628434658, 0.14891201257705688]
-#
-#   keys = ['v_ego', 'a_ego', 'v_lead', 'lead_status', 'x_lead', 'y_lead', 'a_lead', 'a_rel', 'v_lat', 'steer_angle', 'steer_rate', 'track_data', 'time', 'gas', 'brake', 'car_gas', 'left_blinker', 'right_blinker', 'set_speed', 'new_accel', 'gyro']
-#
-#   sample = [8.013258934020996, 0.14726917445659637, 8.45051383972168, True, 12.680000305175781, 0.19999998807907104, 0.7618321180343628, 0.0, 0.0, -0.30000001192092896, 0.0, {'tracks': [{'trackID': 13482, 'yRel': 0.1599999964237213, 'dRel': 12.680000305175781, 'vRel': 0.4000000059604645, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13652, 'yRel': -0.03999999910593033, 'dRel': 19.360000610351562, 'vRel': 0.5249999761581421, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13690, 'yRel': -0.20000000298023224, 'dRel': 22.639999389648438, 'vRel': 0.25, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13691, 'yRel': 4.440000057220459, 'dRel': 27.520000457763672, 'vRel': 8.824999809265137, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13692, 'yRel': 2.8399999141693115, 'dRel': 36.68000030517578, 'vRel': -5.099999904632568, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13694, 'yRel': 2.9600000381469727, 'dRel': 36.68000030517578, 'vRel': -5.074999809265137, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13698, 'yRel': -1.1200000047683716, 'dRel': 17.040000915527344, 'vRel': 0.32499998807907104, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13700, 'yRel': -0.20000000298023224, 'dRel': 25.31999969482422, 'vRel': 0.699999988079071, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13703, 'yRel': -0.11999999731779099, 'dRel': 19.84000015258789, 'vRel': 0.20000000298023224, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13704, 'yRel': 0.23999999463558197, 'dRel': 12.680000305175781, 'vRel': 0.4749999940395355, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13705, 'yRel': 0.03999999910593033, 'dRel': 25.360000610351562, 'vRel': 0.3499999940395355, 'stationary': False, 'oncoming': False, 'status': 0.0}, {'trackID': 13706, 'yRel': -5.599999904632568, 'dRel': 116.4800033569336, 'vRel': 8.675000190734863, 'stationary': False, 'oncoming': False, 'status': 0.0}], 'live': True}, 1571441322.0375044, 26.91699981689453, 0.0, 0.07500000298023224, False, False, 21.94444465637207, 0.06090415226828825, [0.0047149658203125, -0.039764404296875, 0.029388427734375]]
-#   sample = dict(zip(keys, sample))
-#   trks = sample['track_data']['tracks']
-#   trks = [Track(trk['vRel'], trk['yRel'], trk['dRel']) for trk in trks]
-#   trks.append(Track(4, -12.8, 103))
-#   trks.append(Track(12, -11, 115))
-#   trks.append(Track(32, -11, 115))
-#
-#   dRel = [t.dRel for t in trks]
-#   yRel = [t.yRel for t in trks]
-#   steerangle = sample['steer_angle']
-#   plt.scatter(dRel, yRel, label='tracks')
-#   x_path = np.linspace(0, 130, 100)
-#   # y_path = circle_y(x_path, steerangle)
-#   y_path = np.polyval(d_poly, x_path)
-#   plt.plot([0, 130], [0, 0])
-#   # plt.plot(x_path, y_path, label='dPoly')
-#   plt.plot(x_path, y_path + 3.7 / 2, 'r--', label='left line')
-#   plt.plot(x_path, y_path - 3.7 / 2, 'r--', label='right line')
-#
-#   plt.plot(x_path, y_path + 3.7 / 2 + 3.7, 'g--')
-#   plt.plot(x_path, y_path - 3.7 / 2 - 3.7, 'g--')
-#
-#
-#   plt.legend()
-#   plt.show()
-#
-#   for _ in range(1):
-#     out = ls.update(10, None, steerangle, d_poly, trks)  # v_ego, lead, steer_angle, d_poly, live_tracks
-#   print([(lane.name, lane.fastest_count) for lane in ls.lanes.values()])
-#   print('out: {}'.format(out))
-#   print([len(ls.lanes[l].tracks) for l in ls.lanes])
