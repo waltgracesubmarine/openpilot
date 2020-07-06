@@ -62,7 +62,8 @@ class DynamicCameraOffset:
     self.uncertain_lane_width = (self.lane_widths[0] + standard_lane_width) / 2  # if uncertain, apply less offset
     self.offsets = [0.03*1.1, 0.3*1.25, 0.36*1.25]  # needs to be tested and/or tuned
 
-    self.min_poly_prob = 0.65  # lane line must exist in direction we're offsetting towards
+    self.poly_prob_speeds = [0, 25, 35, 60]
+    self.poly_probs = [0.2, 0.25, 0.55, 0.65]  # lane line must exist in direction we're offsetting towards
 
   def update(self, v_ego, lane_width_estimate, lane_width_certainty, l_prob, r_prob):
     self.sm.update(0)
@@ -92,12 +93,13 @@ class DynamicCameraOffset:
     # if not certain, err to smaller lane width to avoid too much offset
     lane_width = (lane_width_estimate * lane_width_certainty) + (self.uncertain_lane_width * (1 - lane_width_certainty))
     offset = np.interp(lane_width, self.lane_widths, self.offsets)
+    min_poly_prob = np.interp(v_ego, self.poly_prob_speeds, self.poly_probs)
     if self.leftLaneOncoming:
-      if r_prob >= self.min_poly_prob:  # make sure there's a lane line on the side we're going to hug
+      if r_prob >= min_poly_prob:  # make sure there's a lane line on the side we're going to hug
         self.keeping_right = True
         return self.camera_offset - offset
     else:  # right lane oncoming
-      if l_prob >= self.min_poly_prob:  # don't want to offset if there's no left/right lane line and we go off the road for ex.
+      if l_prob >= min_poly_prob:  # don't want to offset if there's no left/right lane line and we go off the road for ex.
         self.keeping_left = True
         return self.camera_offset + offset
 
@@ -144,7 +146,7 @@ class LanePlanner():
     CAMERA_OFFSET = self.dynamic_camera_offset.update(v_ego, self.lane_width, self.lane_width_certainty, self.l_prob, self.r_prob)
     self.l_poly[3] += CAMERA_OFFSET
     self.r_poly[3] += CAMERA_OFFSET
-    self.p_poly[3] += CAMERA_OFFSET
+    # self.p_poly[3] += CAMERA_OFFSET
 
     # Find current lanewidth
     self.lane_width_certainty += 0.05 * (self.l_prob * self.r_prob - self.lane_width_certainty)
