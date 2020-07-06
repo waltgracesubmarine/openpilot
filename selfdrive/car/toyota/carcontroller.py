@@ -81,7 +81,7 @@ class CarController():
     else:
       apply_steer_req = 1
 
-    if abs(CS.out.steeringRate) > 100:
+    if abs(CS.out.steeringRate) > 200:
       apply_steer = 0
       apply_steer_req = 0
       self.steer_rate_limited = True
