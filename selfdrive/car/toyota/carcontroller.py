@@ -5,6 +5,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_accel_command, create_acc_cancel_command, create_fcw_command
 from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, SteerLimitParams
 from opendbc.can.packer import CANPacker
+from common.op_params import opParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -36,6 +37,7 @@ class CarController():
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
+    self.op_params = opParams()
 
     self.last_fault_frame = -200
     self.steer_rate_limited = False
@@ -75,16 +77,16 @@ class CarController():
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
+    if not enabled or (frame - self.last_fault_frame < self.op_params.get('steer_fault_timer')):
       apply_steer = 0
       apply_steer_req = 0
     else:
       apply_steer_req = 1
 
-    if abs(CS.out.steeringRate) > 200:
-      apply_steer = 0
-      apply_steer_req = 0
-      self.steer_rate_limited = True
+    # if abs(CS.out.steeringRate) > 200:
+    #   apply_steer = 0
+    #   apply_steer_req = 0
+    #   self.steer_rate_limited = True
 
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
