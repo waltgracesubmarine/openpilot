@@ -6,6 +6,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
 from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, SteerLimitParams
 from opendbc.can.packer import CANPacker
 from common.op_params import opParams
+from cereal.messaging import SubMaster
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -38,6 +39,7 @@ class CarController():
     self.last_standstill = False
     self.standstill_req = False
     self.op_params = opParams()
+    self.sm = SubMaster(['pathPlan'])
 
     self.last_fault_frame = -200
     self.steer_rate_limited = False
@@ -73,11 +75,30 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # only cut torque when steer state is a known fault
+    self.sm.update(0)
+    fault = False
     if CS.steer_state in [9, 25]:
+      fault = True
       self.last_fault_frame = frame
 
+    with open('/data/steer_fault_data', 'a') as f:
+      f.write('{}\n'.format({
+        'fault': fault,
+        'apply_accel': apply_accel,
+        'v_ego': CS.out.vEgo,
+        'new_steer': new_steer,
+        'apply_steer': apply_steer,
+        'steer_rate_limited': self.steer_rate_limited,
+        'steering_torque_eps': CS.out.steeringTorqueEps,  # torque sent to car
+        'steering_torque': CS.out.steeringTorque,  # driver's torque
+        'a_ego': CS.out.aEgo,
+        'steering_rate': CS.out.steeringRate,
+        'steering_angle': CS.out.steeringAngle,
+        'd_poly': list(self.sm['pathPlan'].dPoly),
+      }))
+
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < self.op_params.get('steer_fault_timer')):
+    if not enabled or (frame - self.last_fault_frame < 200):
       apply_steer = 0
       apply_steer_req = 0
     else:
