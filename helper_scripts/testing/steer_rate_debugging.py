@@ -30,6 +30,20 @@ print('Max fault steer rate: {}'.format(max(np.abs(faults_steer_rate))))
 print('Min fault steer rate: {}'.format(min(np.abs(faults_steer_rate))))
 faults_towards_center = [line for line in faults if (line['steering_angle'] < 0 and line['steering_rate'] > 0) or (line['steering_angle'] > 0 and line['steering_rate'] < 0)]
 faults_away_from_center = [line for line in faults if (line['steering_angle'] < 0 and line['steering_rate'] < 0) or (line['steering_angle'] > 0 and line['steering_rate'] > 0)]
+print('---')
+faults_steer_rate_towards_center = [line['steering_rate'] for line in faults_towards_center]
+faults_steer_rate_away_from_center = [line['steering_rate'] for line in faults_away_from_center]
+print('Avg. towards center fault steer rate: {}'.format(np.mean(np.abs(faults_steer_rate_towards_center))))
+print('Std. towards center fault steer rate: {}'.format(np.std(np.abs(faults_steer_rate_towards_center))))
+print('Max towards center fault steer rate: {}'.format(max(np.abs(faults_steer_rate_towards_center))))
+print('Min towards center fault steer rate: {}'.format(min(np.abs(faults_steer_rate_towards_center))))
+print()
+print('Avg. away from center fault steer rate: {}'.format(np.mean(np.abs(faults_steer_rate_away_from_center))))
+print('Std. away from towards center fault steer rate: {}'.format(np.std(np.abs(faults_steer_rate_away_from_center))))
+print('Max away from center fault steer rate: {}'.format(max(np.abs(faults_steer_rate_away_from_center))))
+print('Min away from center fault steer rate: {}'.format(min(np.abs(faults_steer_rate_away_from_center))))
+print('---')
+
 print('Faults occuring when moving towards center: {}'.format(len(faults_towards_center)))
 print('Faults occuring when moving away from center: {}'.format(len(faults_away_from_center)))
 print('Percentage of faults moving towards center: {}%'.format(round(len(faults_towards_center) / len(faults) * 100, 2)))
