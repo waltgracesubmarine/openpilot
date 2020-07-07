@@ -95,6 +95,7 @@ class CarController():
         'steering_rate': CS.out.steeringRate,
         'steering_angle': CS.out.steeringAngle,
         'd_poly': list(self.sm['pathPlan'].dPoly),
+        'enabled': CS.out.cruiseState.enabled,
       }))
 
     # Cut steering for 2s after fault
