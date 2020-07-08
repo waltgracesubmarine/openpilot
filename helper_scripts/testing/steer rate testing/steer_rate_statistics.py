@@ -6,13 +6,16 @@ os.chdir('C:/Git/steer fault exploration')
 
 MPH_TO_MS = 1 / 2.2369
 
-with open('steer_fault_data', 'r') as f:
-  raw = f.read().split('\n')[:-1]
 data = []
-for line in raw:
-  if 'nan' in line:
-    continue
-  data.append(json.loads(line.replace("'", '"').replace('False', 'false').replace('True', 'true')))  # json loads faster than ast
+for _f in os.listdir():
+  if 'steer_fault_data' in _f:
+    print('loading: {}'.format(_f))
+    with open(_f, 'r') as f:
+      raw = f.read().split('\n')[:-1]
+    for line in raw:
+      if 'nan' in line:
+        continue
+      data.append(json.loads(line.replace("'", '"').replace('False', 'false').replace('True', 'true')))  # json loads faster than ast
 faults = []
 for idx, line in enumerate(data):
   if idx == 0:
