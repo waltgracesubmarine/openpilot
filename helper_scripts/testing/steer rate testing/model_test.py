@@ -70,7 +70,7 @@ print('train samples: {}'.format(len(x_train)))
 print('test samples: {}'.format(len(x_test)))
 
 model = Sequential()
-model.add(GaussianNoise(0.1, input_shape=x_train.shape[1:]))
+# model.add(GaussianNoise(0.1, input_shape=x_train.shape[1:]))
 model.add(Dense(16, activation='relu'))
 model.add(Dense(8, activation='relu'))
 # model.add(Dense(1))
