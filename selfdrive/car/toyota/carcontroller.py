@@ -7,6 +7,7 @@ from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, SteerLimitParams
 from opendbc.can.packer import CANPacker
 from common.op_params import opParams
 from cereal.messaging import SubMaster
+from common.realtime import sec_since_boot
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -96,6 +97,7 @@ class CarController():
         'steering_angle': CS.out.steeringAngle,
         'd_poly': list(self.sm['pathPlan'].dPoly),
         'enabled': CS.out.cruiseState.enabled,
+        'time': sec_since_boot(),
       }))
 
     # Cut steering for 2s after fault
