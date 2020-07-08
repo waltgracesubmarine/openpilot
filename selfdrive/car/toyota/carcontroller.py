@@ -87,7 +87,7 @@ class CarController():
         'apply_accel': apply_accel,
         'v_ego': CS.out.vEgo,
         'new_steer': new_steer,
-        'apply_steer': apply_steer,
+        'apply_steer': apply_steer, # test
         'steer_rate_limited': self.steer_rate_limited,
         'steering_torque_eps': CS.out.steeringTorqueEps,  # torque sent to car
         'steering_torque': CS.out.steeringTorque,  # driver's torque
