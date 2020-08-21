@@ -142,7 +142,7 @@ class LatPIDController():
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p * self.op_params.get('p_multiplier')
-    self.f = feedforward * self.k_f
+    self.f = feedforward * self.k_f * self.op_params.get('f_multiplier')
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
