@@ -63,7 +63,7 @@ class opParams:
     VT = ValueTypes()
     self.fork_params = {'p_multiplier': Param(1., VT.number, 'This is multiplied by your car\'s proportional tuning value', live=True),
                         'i_multiplier': Param(1., VT.number, 'This is multiplied by your car\'s integral tuning value', live=True),
-                        'd_value': Param(1., VT.number, 'Since most cars don\'t have derivative tuned, this is the actual tuning value', live=True),
+                        'd_value': Param(1., VT.number, 'Since most cars don\'t have derivative tuned, this is the actual tuning value.\nGo ahead and experiment, this value could be anything!', live=True),
 
                         'username': Param(None, [type(None), str, bool], 'Your identifier provided with any crash logs sent to Sentry.\n'
                                                                          'Helps the developer reach out to you if anything goes wrong'),
