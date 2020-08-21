@@ -4,11 +4,11 @@ This branch is to help you live tune your pre-existing proportional-and-integral
 
        python /data/openpilot/op_edit.py
 2. Make sure you're in live tuning mode by typing `live` if not already, after completing opEdit setup.
-3. You'll see three parameters:
-    - `p_multiplier`: proportional multiplier
-    - `i_multiplier`: integral multiplier
-    - `f_multiplier`: feedforward multiplier
-    - `d_gain`: derivative gain (the actual derivative gain)
+3. You'll see four parameters:
+    - `p_multiplier`: proportional multiplier (1. is stock tuning)
+    - `i_multiplier`: integral multiplier (1. is stock tuning) 
+    - `f_multiplier`: feedforward multiplier (1. is stock tuning)
+    - `d_gain`: derivative gain (the actual derivative gain, 0. disables derivative!)
 
     P, I and F parameters are simply multiplied by your car's pre-existing tuning values. Once you find good PIF multipliers, multiply your car's PIF gains by the multipliers and replace with the gains on your fork/branch or open a PR to this fork.
 
