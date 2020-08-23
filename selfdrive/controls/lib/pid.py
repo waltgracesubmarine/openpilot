@@ -1,6 +1,7 @@
 import numpy as np
 from common.numpy_fast import clip, interp
 from common.op_params import opParams
+from common.realtime import sec_since_boot
 
 
 def apply_deadzone(error, deadzone):
@@ -129,6 +130,8 @@ class LatPIDController():
     return self.sat_count > self.sat_limit
 
   def reset(self):
+    self.errors = []
+    self.last_print = 0
     self.p = 0.0
     self.i = 0.0
     self.f = 0.0
@@ -141,6 +144,14 @@ class LatPIDController():
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
+    now = sec_since_boot()
+    self.errors.append({'error': float(error), 'time': now})
+    self.errors = [e for e in self.errors if now - e['time'] <= 60.]
+    if now - self.last_print >= 1:
+      print('PID errors from last {} seconds'.format(round(now - self.errors[0]['time'], 2)))
+      print('Absolute sum of errors: {}\n---'.format(round(sum([abs(e['error']) for e in self.errors]), 3)))
+      self.last_print = now
+
     self.p = error * self.k_p * self.op_params.get('p_multiplier')
     self.f = feedforward * self.k_f * self.op_params.get('f_multiplier')
 
