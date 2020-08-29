@@ -33,15 +33,22 @@ class LatPIDController():
 
   @property
   def k_p(self):
-    return interp(self.speed, self._k_p[0], self._k_p[1])
+    multiplier = interp(abs(self.measurement), [0, 90 / 2, 90], [1, 1.1, 1.15])
+    if abs(self.measurement) > abs(self.setpoint):  # whenever wheel needs to return to center, reduce gain
+      multiplier *= 0.75
+    return interp(self.speed, self._k_p[0], self._k_p[1]) * multiplier
 
   @property
   def k_i(self):
-    return interp(self.speed, self._k_i[0], self._k_i[1])
+    multiplier = interp(abs(self.measurement), [0, 90 / 2, 90], [1, 1.05, 1.075])
+    if abs(self.measurement) > abs(self.setpoint):  # whenever wheel needs to return to center, reduce gain
+      multiplier *= 0.8
+    return interp(self.speed, self._k_i[0], self._k_i[1]) * multiplier
 
   @property
   def k_d(self):
-    return interp(self.speed, self._k_d[0], self._k_d[1])
+    multiplier = interp(abs(self.measurement), [0, 90 / 2, 90], [1, 1.25, 1.35])
+    return interp(self.speed, self._k_d[0], self._k_d[1]) * multiplier
 
   def _check_saturation(self, control, check_saturation, error):
     saturated = (control < self.neg_limit) or (control > self.pos_limit)
@@ -65,6 +72,8 @@ class LatPIDController():
     self.last_error = 0
 
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+    self.measurement = measurement
+    self.setpoint = setpoint
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
