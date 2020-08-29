@@ -33,7 +33,7 @@ class LatPIDController():
 
   @property
   def k_p(self):
-    multiplier = interp(abs(self.measurement), [0, 90 / 2, 90], [1, 1.1, 1.15])
+    multiplier = interp(abs(self.measurement), [0, 90 / 2, 90], [1, 1.1, 1.175])
     if abs(self.measurement) > abs(self.setpoint):  # whenever wheel needs to return to center, reduce gain
       multiplier *= 0.75
     return interp(self.speed, self._k_p[0], self._k_p[1]) * multiplier
