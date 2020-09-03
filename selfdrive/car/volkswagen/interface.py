@@ -5,8 +5,8 @@ from common.params import Params
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-
 EventName = car.CarEvent.EventName
+
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
@@ -164,9 +164,9 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                   c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert,
-                   c.hudControl.leftLaneVisible,
-                   c.hudControl.rightLaneVisible)
+                               c.hudControl.visualAlert,
+                               c.hudControl.audibleAlert,
+                               c.hudControl.leftLaneVisible,
+                               c.hudControl.rightLaneVisible)
     self.frame += 1
     return can_sends
