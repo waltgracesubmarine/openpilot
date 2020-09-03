@@ -1,10 +1,12 @@
 from cereal import car
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, NWL, TRANS, GEAR, MQB_CARS, PQ_CARS
 from common.params import Params
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+
+
+EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
@@ -134,17 +136,17 @@ class CarInterface(CarInterfaceBase):
 
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
-      events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      events.add(EventName.parkBrake)
     if self.CS.steeringFault:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      events.add(EventName.steerTempUnavailable)
 
     # Engagement and longitudinal control using stock ACC. Make sure OP is
     # disengaged if stock ACC is disengaged.
     if not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+      events.add(EventName.pcmDisable)
     # Attempt OP engagement only on rising edge of stock ACC engagement.
     elif not self.cruise_enabled_prev:
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
+      events.add(EventName.pcmEnable)
 
     ret.events = events
     ret.buttonEvents = buttonEvents
