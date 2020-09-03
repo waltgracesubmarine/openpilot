@@ -18,8 +18,8 @@ def create_mqb_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   }
   return packer.make_can_msg("HCA_01", bus, values, idx)
 
-def create_mqb_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert, leftLaneVisible, rightLaneVisible):
 
+def create_mqb_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert, leftLaneVisible, rightLaneVisible):
   if hca_enabled:
     leftlanehud = 3 if leftLaneVisible else 1
     rightlanehud = 3 if rightLaneVisible else 1
@@ -28,7 +28,7 @@ def create_mqb_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert
     rightlanehud = 2 if rightLaneVisible else 1
 
   values = {
-    "LDW_Unknown": 2, # FIXME: possible speed or attention relationship
+    "LDW_Unknown": 2,  # FIXME: possible speed or attention relationship
     "Kombi_Lamp_Orange": 1 if hca_enabled and steering_pressed else 0,
     "Kombi_Lamp_Green": 1 if hca_enabled and not steering_pressed else 0,
     "Left_Lane_Status": leftlanehud,
@@ -36,6 +36,7 @@ def create_mqb_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert
     "Alert_Message": hud_alert,
   }
   return packer.make_can_msg("LDW_02", bus, values)
+
 
 def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
   values = {
@@ -54,6 +55,7 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
   }
 
   return packer.make_can_msg("GRA_ACC_01", bus, values, idx)
+
 
 # ----------------------------------------------------------------------- #
 #                                                                         #
@@ -74,6 +76,7 @@ def create_pq_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   values["HCA_Checksumme"] = dat[1] ^ dat[2] ^ dat[3] ^ dat[4]
   return packer.make_can_msg("HCA_1", bus, values)
 
+
 def create_pq_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert, leftLaneVisible, rightLaneVisible):
   if hca_enabled:
     leftlanehud = 3 if leftLaneVisible else 1
@@ -91,7 +94,9 @@ def create_pq_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert,
   }
   return packer.make_can_msg("LDW_1", bus, values)
 
+
 pass
+
 
 def create_pq_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
   pass
