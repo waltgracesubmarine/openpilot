@@ -148,7 +148,7 @@ class CarInterface(CarInterfaceBase):
     elif not self.cruise_enabled_prev:
       events.add(EventName.pcmEnable)
 
-    ret.events = events
+    ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
     ret.canMonoTimes = canMonoTimes
 
