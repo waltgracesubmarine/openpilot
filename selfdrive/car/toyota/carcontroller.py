@@ -40,6 +40,7 @@ class CarController():
 
     self.last_fault_frame = -200
     self.steer_rate_limited = False
+    self.last_steer_angle = 0
 
     self.fake_ecus = set()
     if CP.enableCamera:
@@ -79,11 +80,14 @@ class CarController():
 
     # Cut steering for 2s after fault
     # if (CS.out.steeringAngle < 0 < CS.out.steeringRate or CS.out.steeringAngle > 0 > CS.out.steeringRate) and abs(CS.out.steeringRate) > 175:
-    if not enabled or (frame - self.last_fault_frame < 200) or abs(CS.out.steeringRate) > 100:
+    immediate_steer_rate = abs(CS.out.steeringAngle - self.last_steer_angle) * 100  # CC runs at 100hz todo: could use last .5 seconds, or last .25 seconds
+    if not enabled or (frame - self.last_fault_frame < 200) or immediate_steer_rate > 100:
       apply_steer = 0
       apply_steer_req = 0
     else:
       apply_steer_req = 1
+
+    self.last_steer_angle = CS.out.steeringAngle
 
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
