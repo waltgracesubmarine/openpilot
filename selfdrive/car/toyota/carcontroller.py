@@ -82,9 +82,9 @@ class CarController():
       self.last_fault_frame = frame # test
 
     # Cut steering for 2s after fault
-    steer_angle_index = self.op_params.get('steer_rate_history') * 100
-    last_steer_angle = self.steer_angles[-int(round(steer_angle_index))]
-    immediate_steer_rate = abs(CS.out.steeringAngle - last_steer_angle) * 100  # CC runs at 100hz
+    steer_angle_index = self.op_params.get('steer_rate_history')
+    last_steer_angle = self.steer_angles[-int(round(steer_angle_index * 100))]
+    immediate_steer_rate = abs(CS.out.steeringAngle - last_steer_angle) * (1 / steer_angle_index) # CC runs at 100hz
     print('IMMEDIATE: {}'.format(round(immediate_steer_rate, 4)))
     print('AVERAGE: {}\n---'.format(round(CS.out.steeringRate, 4)))
     if not enabled or (frame - self.last_fault_frame < 200) or immediate_steer_rate > 100:
