@@ -93,7 +93,7 @@ class opParams:
                         'prius_use_pid': Param(False, bool, 'This enables the PID lateral controller with new a experimental derivative tune\nFalse: stock INDI, True: TSS2-tuned PID'),
                         'corolla_use_lqr': Param(False, bool, 'Enable this to use LQR for lateral control with your TSS1 Corolla\nFalse: PID, True: RAV4-tuned LQR'),
                         'corollaTSS2_use_indi': Param(False, bool, 'Enable this to use INDI for lat with your Corolla with TSS2'),
-                        'steer_rate_history': Param(0.01, VT.number, 'How long in seconds to calculate steer rate from. 0.01 is last steer angle, 1 is a second ago')}
+                        'steer_rate_history': Param(0.01, VT.number, 'How long in seconds to calculate steer rate from. 0.01 is last steer angle, 1 is a second ago', live=True)}
 
     self._params_file = '/data/op_params.json'
     self._backup_file = '/data/op_params_corrupt.json'
