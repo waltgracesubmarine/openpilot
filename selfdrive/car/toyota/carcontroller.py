@@ -6,6 +6,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_fcw_command
 from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, SteerLimitParams
 from opendbc.can.packer import CANPacker
+from common.op_params import opParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -40,7 +41,9 @@ class CarController():
 
     self.last_fault_frame = -200
     self.steer_rate_limited = False
-    self.last_steer_angle = 0
+    self.steer_angles = list(range(100))
+    self.op_params = opParams()
+    # self.last_steer_angle = 0
 
     self.fake_ecus = set()
     if CP.enableCamera:
@@ -79,8 +82,9 @@ class CarController():
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    # if (CS.out.steeringAngle < 0 < CS.out.steeringRate or CS.out.steeringAngle > 0 > CS.out.steeringRate) and abs(CS.out.steeringRate) > 175:
-    immediate_steer_rate = abs(CS.out.steeringAngle - self.last_steer_angle) * 100  # CC runs at 100hz todo: could use last .5 seconds, or last .25 seconds
+    steer_angle_index = self.op_params.get('steer_rate_history') * 100
+    last_steer_angle = self.steer_angles[-int(round(steer_angle_index))]
+    immediate_steer_rate = abs(CS.out.steeringAngle - last_steer_angle) * 100  # CC runs at 100hz
     print('IMMEDIATE: {}'.format(round(immediate_steer_rate, 4)))
     print('AVERAGE: {}\n---'.format(round(CS.out.steeringRate, 4)))
     if not enabled or (frame - self.last_fault_frame < 200) or immediate_steer_rate > 100:
@@ -89,7 +93,8 @@ class CarController():
     else:
       apply_steer_req = 1
 
-    self.last_steer_angle = CS.out.steeringAngle
+    self.steer_angles.append(CS.out.steeringAngle)
+    self.steer_angles = self.steer_angles[-100:]  # keep last second in history
 
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
