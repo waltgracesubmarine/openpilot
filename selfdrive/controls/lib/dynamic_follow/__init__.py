@@ -197,7 +197,7 @@ class DynamicFollow:
     # rel_x = [-2.6822, -1.7882, -0.8941, -0.447, -0.2235, 0.0]
     # mod_y = [0.3245 * 1.1, 0.277 * 1.08, 0.11075 * 1.06, 0.08106 * 1.045, 0.06325 * 1.035, 0.0]
     rel_x = [0, 0.67056, -2.2352]
-    mod_y = [0, .08, .35]
+    mod_y = [0, .1, .35]
     return interp(a_lead, rel_x, mod_y)
 
   def _relative_accel_mod(self):
