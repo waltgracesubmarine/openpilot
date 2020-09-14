@@ -325,7 +325,7 @@ class DynamicFollow:
     # if self.lead_data.v_lead - deadzone > self.car_data.v_ego:
     #   TR_mods.append(self._relative_accel_mod())
 
-    TR_mods.append(self._v_lead_slow_down)  # apply more distance when lead is slowing over a while
+    TR_mods.append(self._v_lead_slow_down())  # apply more distance when lead is slowing over a while
 
     # x = [self.sng_speed, self.sng_speed / 5.0]  # as we approach 0, apply x% more distance
     # y = [1.0, 1.05]
