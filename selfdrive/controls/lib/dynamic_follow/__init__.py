@@ -38,7 +38,7 @@ class DynamicFollow:
     self.default_TR = 1.8
     self.TR = 1.8
     self.v_ego_retention = 2.5
-    self.v_rel_retention = 2.
+    self.v_rel_retention = 3.
 
     self.sng_TR = 1.8  # reacceleration stop and go TR
     self.sng_speed = 18.0 * CV.MPH_TO_MS
