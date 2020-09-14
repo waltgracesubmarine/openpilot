@@ -123,29 +123,28 @@ class DynamicFollow:
 
   def _send_cur_state(self):
     if self.mpc_id == 1 and self.pm is not None:
-      dat = messaging.new_message()
-      dat.init('dynamicFollowData')
+      dat = messaging.new_message('dynamicFollowData')
       dat.dynamicFollowData.mpcTR = self.TR
       dat.dynamicFollowData.profilePred = self.model_profile
       self.pm.send('dynamicFollowData', dat)
 
   def _change_cost(self, libmpc):
     TRs = [0.9, 1.8, 2.7]
-    costs = [1.15, 0.15, 0.05]
-    cost = interp(self.TR, TRs, costs)
+    costs = [1., 0.1, .07]
+    dist_cost = interp(self.TR, TRs, costs)
 
     change_time = sec_since_boot() - self.profile_change_time
-    change_time_x = [0, 0.5, 4]  # for three seconds after effective profile has changed
-    change_mod_y = [3, 6, 1]  # multiply cost by multiplier to quickly change distance
+    change_time_x = [0, 0.5, 3]  # for three seconds after effective profile has changed
+    change_mod_y = [2, 7, 1]  # multiply cost by multiplier to quickly change distance
     if change_time < change_time_x[-1]:  # if profile changed in last 3 seconds
       cost_mod = interp(change_time, change_time_x, change_mod_y)
       cost_mod_speeds = [0, 20 * CV.MPH_TO_MS]  # don't change cost too much under 20 mph
       cost_mods = [cost_mod * 0.01, cost_mod]
-      cost *= interp(cost_mod, cost_mod_speeds, cost_mods)
+      dist_cost *= interp(cost_mod, cost_mod_speeds, cost_mods)
 
-    if self.last_cost != cost:
-      libmpc.change_costs(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)  # todo: jerk is the derivative of acceleration, could tune that
-      self.last_cost = cost
+    if self.last_cost != dist_cost:
+      libmpc.change_costs(MPC_COST_LONG.TTC, dist_cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)  # todo: jerk is the derivative of acceleration, could tune that
+      self.last_cost = dist_cost
 
   def _store_df_data(self):
     cur_time = sec_since_boot()
@@ -217,9 +216,12 @@ class DynamicFollow:
     global_df_mod = 1 - self.global_df_mod
 
     # Calculate new TRs
-    speeds = [0, self.sng_speed, 18, x_vel[-1]]  # [0, 18 mph, ~40 mph, highest profile mod speed (~78 mph)]
-    mods = [0, 0.1, 0.7, 1]  # how much to limit global_df_mod at each speed, 1 is full effect
-    y_dist_new = [y - (y * global_df_mod * interp(x, speeds, mods)) for x, y in zip(x_vel, y_dist)]
+    if self.global_df_mod < 1:  # if reducing distance
+      speeds = [0, self.sng_speed, 18, x_vel[-1]]  # [0, 18 mph, ~40 mph, highest profile mod speed (~78 mph)]
+      mods = [0, 0.25, 0.75, 1]  # how much to limit global_df_mod at each speed, 1 is full effect
+      y_dist_new = [y - (y * global_df_mod * interp(x, speeds, mods)) for x, y in zip(x_vel, y_dist)]
+    else:  # increasing distance, no need to limit the global mod
+      y_dist_new = [y - (y * global_df_mod) for x, y in zip(x_vel, y_dist)]
 
     # Calculate how to change profile mods based on change in TR
     # eg. if df mod is 0.7, then increase positive mod and decrease negative mod
@@ -267,15 +269,27 @@ class DynamicFollow:
 
     if self.car_data.v_ego > self.sng_speed:  # keep sng distance until we're above sng speed again
       self.sng = False
-
-    if (self.car_data.v_ego >= self.sng_speed or self.df_data.v_egos[0]['v_ego'] >= self.car_data.v_ego) and not self.sng:
-      # if above 15 mph OR we're decelerating to a stop, keep shorter TR. when we reaccelerate, use sng_TR and slowly decrease
-      TR = interp(self.car_data.v_ego, x_vel, y_dist)
-    else:  # this allows us to get closer to the lead car when stopping, while being able to have smooth stop and go when reaccelerating
+    elif self.car_data.v_ego < 10 * CV.MPH_TO_MS:
       self.sng = True
+
+    if not self.sng:
+      TR = interp(self.car_data.v_ego, x_vel, y_dist)
+    else:
       x = [self.sng_speed * 0.7, self.sng_speed]  # decrease TR between 12.6 and 18 mph from 1.8s to defined TR above at 18mph while accelerating
       y = [self.sng_TR, interp(self.sng_speed, x_vel, y_dist)]
       TR = interp(self.car_data.v_ego, x, y)
+
+    # if self.car_data.v_ego > self.sng_speed:  # keep sng distance until we're above sng speed again
+    #   self.sng = False
+    #
+    # if (self.car_data.v_ego >= self.sng_speed or self.df_data.v_egos[0]['v_ego'] >= self.car_data.v_ego) and not self.sng:
+    #   # if above 15 mph OR we're decelerating to a stop, keep shorter TR. when we reaccelerate, use sng_TR and slowly decrease
+    #   TR = interp(self.car_data.v_ego, x_vel, y_dist)
+    # else:  # this allows us to get closer to the lead car when stopping, while being able to have smooth stop and go when reaccelerating
+    #   self.sng = True
+    #   x = [self.sng_speed * 0.7, self.sng_speed]  # decrease TR between 12.6 and 18 mph from 1.8s to defined TR above at 18mph while accelerating
+    #   y = [self.sng_TR, interp(self.sng_speed, x_vel, y_dist)]
+    #   TR = interp(self.car_data.v_ego, x, y)
 
     TR_mods = []
     # Dynamic follow modifications (the secret sauce)
@@ -291,9 +305,9 @@ class DynamicFollow:
     # if self.lead_data.v_lead - deadzone > self.car_data.v_ego:
     #   TR_mods.append(self._relative_accel_mod())
 
-    x = [self.sng_speed, self.sng_speed / 5.0]  # as we approach 0, apply x% more distance
-    y = [1.0, 1.05]
-    profile_mod_pos *= interp(self.car_data.v_ego, x, y)  # but only for currently positive mods
+    # x = [self.sng_speed, self.sng_speed / 5.0]  # as we approach 0, apply x% more distance
+    # y = [1.0, 1.05]
+    # profile_mod_pos *= interp(self.car_data.v_ego, x, y)  # but only for currently positive mods  todo: shouldn't this be TR?
 
     TR_mod = sum([mod * profile_mod_neg if mod < 0 else mod * profile_mod_pos for mod in TR_mods])  # alter TR modification according to profile
     TR += TR_mod
@@ -324,7 +338,7 @@ class DynamicFollow:
   def _get_live_params(self):
     self.global_df_mod = self.op_params.get('global_df_mod')
     if self.global_df_mod != 1.:
-      self.global_df_mod = clip(self.global_df_mod, 0.85, 1.2)
+      self.global_df_mod = clip(self.global_df_mod, 0.85, 1.5)
 
     self.min_TR = self.op_params.get('min_TR')
     if self.min_TR != 1.:
