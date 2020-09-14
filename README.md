@@ -1,7 +1,7 @@
 Stock Additions 0.7.7
 =====
 
-Stock Additions is a fork of openpilot designed to be minimal in UI design while boasting various feature additions and behavior improvements over stock. I have a Toyota Corolla with comma pedal, so most of my changes are designed to improve the longitudinal performance.
+This branch is simply stock openpilot with some additions to help it drive as smooth as possible on my 2017 Toyota Corolla w/ comma pedal.
 
 Want to request a feature or create a bug report? [Open an issue here!](https://github.com/ShaneSmiskol/openpilot/issues/new/choose)
 
@@ -17,12 +17,11 @@ Highlight Features
 * **Lane Speed**
   * [**Lane Speed Alerts**](#Lane-Speed-alerts) - alerts for when an adjacent lane is faster
   * [**Dynamic camera offsetting**](#Dynamic-camera-offset-based-on-oncoming-traffic) - automatically moves you over if adjacent lane has oncoming traffic
-* [**NEW❗ Curvature Learner v5**](#curvature-learner) - zorrobyte's curvature learner with some additions
 * [**Dynamic gas**](#dynamic-gas) - smoother gas control
-* [**PI > PID for longcontrol**](#Long-control-uses-a-PID-loop) - fix for overshoot with comma pedal
-* [**Customize this fork**](#Customize-this-fork-opEdit) - easily edit fork parameters with support for live tuning
+* [**PI > PID for longcontrol**](#Long-control-uses-a-PID-loop) - fix for pedal overshoot
+* [**Customize this fork (opEdit with live tuning)**](#Customize-this-fork-opEdit)
 * [**Automatic updates**](#Automatic-updates)
-* [**Offline crash logging**](#Offline-crash-logging) - check out `/data/community/crashes`
+* [**Offline crash logging**](#Offline-crash-logging)
 
 Documentation
 =====
@@ -44,7 +43,7 @@ Just use the button on the button right of the screen while driving to change be
   * `roadtrip` - This profile is for road trips where you're mainly on two lane highways and don't want to be following particularly closely; at night for example.
   * [`auto`](#Automatic-DF-profile-switching) - The auto dynamic follow model was trained on about an hour of me manually cycling through the different profiles based on driving conditions, this profile tries to replicate those decisions entirely on its own.
 
-<img src=".media/df_profiles.jpg?raw=true">
+<img src=".media/df_profiles.jpg?raw=true" height="350">
 
 Automatic DF profile switching
 -----
@@ -72,22 +71,6 @@ Dynamic camera offset (based on oncoming traffic)
 This feature automatically adjusts your position in the lane if an adjacent lane has oncoming traffic. For example, if you're on a two-lane highway and the left adjacent lane has oncoming cars, LaneSpeed recognizes those cars and applies an offset to your `CAMERA_OFFSET` to move you over in the lane, keeping you farther from oncoming cars.
 
 **This feature is available from 35 to ~60 mph due to a limitation with the Toyota radar**. It may not recognize oncoming traffic above 60 mph or so. To enable or disable this feature, use `opEdit` and change this parameter: `dynamic_camera_offset`.
-
-Curvature Learner
------
-From [zorrobyte](https://github.com/zorrobyte/openpilot), I've added his Curvature Learner to help fix hugging in curves with a few modifications of my own to improve the idea further.
-
-***What's new in Curvature Learner v5:***
-  - Moved to using the curvature from dPoly rather than steering angle for curve measurement and learning. This helps fix oscilation issues with slight curves.
-    - Curvature is (rudimentarily) calculated as the lateral position of the dPoly path at 0.9 seconds into the future.
-  - Added vehicle speed as a learning factor
-  - Added curve direction as a learning factor (left and right curves learn different offsets)
-  - And the biggest difference is the introduction of clustering, I've used sklearn's KMeans algorithm to find the most common clusters of data (speed vs road curvature on a 2D graph). The curvature learner will group the sample into the closest cluster and learn/use the offset from that cluster.
-
-Special thanks to [Trae#2379](https://github.com/d412k5t412) for helping me gather data used to calculate the clusters!
-<p align="center">
-  <img src=".media/curvature-clusters.png" height="350">
-</p>
 
 Dynamic gas
 -----
