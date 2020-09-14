@@ -38,7 +38,7 @@ class DynamicFollow:
     self.default_TR = 1.8
     self.TR = 1.8
     self.v_ego_retention = 2.5
-    self.v_rel_retention = 1.75
+    self.v_rel_retention = 2.
 
     self.sng_TR = 1.8  # reacceleration stop and go TR
     self.sng_speed = 18.0 * CV.MPH_TO_MS
@@ -150,10 +150,10 @@ class DynamicFollow:
     cur_time = sec_since_boot()
     # Store custom relative accel over time
     if self.lead_data.status:
-      if self.lead_data.new_lead:
-        self.df_data.v_rels = []  # reset when new lead
-      else:
-        self.df_data.v_rels = self._remove_old_entries(self.df_data.v_rels, cur_time, self.v_rel_retention)
+      # if self.lead_data.new_lead:
+      #   self.df_data.v_rels = []  # reset when new lead
+      # else:
+      self.df_data.v_rels = self._remove_old_entries(self.df_data.v_rels, cur_time, self.v_rel_retention)
       self.df_data.v_rels.append({'v_ego': self.car_data.v_ego, 'v_lead': self.lead_data.v_lead, 'time': cur_time})
 
     # Store our velocity for better sng
@@ -179,6 +179,26 @@ class DynamicFollow:
 
   def _remove_old_entries(self, lst, cur_time, retention):
     return [sample for sample in lst if cur_time - sample['time'] <= retention]
+
+  def _v_lead_slow_down(self):  # lead is slowing for a duration
+    if not len(self.df_data.v_rels):
+      return 0
+
+    elapsed_time = self.df_data.v_rels[-1]['time'] - self.df_data.v_rels[0]['time']
+    min_consider_time = 1.
+    if elapsed_time >= min_consider_time:
+      a_lead = (self.df_data.v_rels[-1]['v_lead'] - self.df_data.v_rels[0]['v_lead']) / elapsed_time
+    else:
+      return 0
+
+    if a_lead > 0:  # return only if adding distance
+      return 0
+
+    # rel_x = [-2.6822, -1.7882, -0.8941, -0.447, -0.2235, 0.0]
+    # mod_y = [0.3245 * 1.1, 0.277 * 1.08, 0.11075 * 1.06, 0.08106 * 1.045, 0.06325 * 1.035, 0.0]
+    rel_x = [0, 0.67056, -2.2352]
+    mod_y = [0, .08, .35]
+    return interp(a_lead, rel_x, mod_y)
 
   def _relative_accel_mod(self):
     """
@@ -304,6 +324,8 @@ class DynamicFollow:
     # deadzone = self.car_data.v_ego / 3  # 10 mph at 30 mph  # todo: tune pedal to react similarly to without before adding/testing this
     # if self.lead_data.v_lead - deadzone > self.car_data.v_ego:
     #   TR_mods.append(self._relative_accel_mod())
+
+    TR_mods.append(self._v_lead_slow_down)  # apply more distance when lead is slowing over a while
 
     # x = [self.sng_speed, self.sng_speed / 5.0]  # as we approach 0, apply x% more distance
     # y = [1.0, 1.05]
