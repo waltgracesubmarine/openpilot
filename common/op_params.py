@@ -95,7 +95,14 @@ class opParams:
                         'prius_use_pid': Param(False, bool, 'This enables the PID lateral controller with new a experimental derivative tune\nFalse: stock INDI, True: TSS2-tuned PID'),
                         'corolla_use_lqr': Param(False, bool, 'Enable this to use LQR for lateral control with your TSS1 Corolla\nFalse: PID, True: RAV4-tuned LQR'),
                         'corollaTSS2_use_indi': Param(False, bool, 'Enable this to use INDI for lat with your Corolla with TSS2'),
-                        'standstill_hack': Param(False, bool, 'Some cars support stop and go, you just need to enable this')}
+                        'standstill_hack': Param(False, bool, 'Some cars support stop and go, you just need to enable this'),
+                        'STEER_MAX': Param(1500, VT.number, 'Default is 1500', live=True),
+                        'STEER_DELTA_UP': Param(10, VT.number, 'Default is 10', live=True),
+                        'STEER_DELTA_DOWN': Param(20, VT.number, 'Default is 25', live=True),
+                        'STEER_ERROR_MAX': Param(350, VT.number, 'Default is 350', live=True),
+                        'steer_rate_fix': Param(True, bool, 'To restrict torque when steering rate goes above 100 deg/s', live=True),
+                        'steer_rate_fix_rate': Param(True, int, 'The steer rate at which it cuts torque', live=True),
+                        }
 
     self._params_file = '/data/op_params.json'
     self._backup_file = '/data/op_params_corrupt.json'
