@@ -101,7 +101,7 @@ class opParams:
                         'STEER_DELTA_DOWN': Param(20, VT.number, 'Default is 25', live=True),
                         'STEER_ERROR_MAX': Param(350, VT.number, 'Default is 350', live=True),
                         'steer_rate_fix': Param(True, bool, 'To restrict torque when steering rate goes above 100 deg/s', live=True),
-                        'steer_rate_fix_rate': Param(True, int, 'The steer rate at which it cuts torque', live=True),
+                        'steer_rate_fix_rate': Param(100, int, 'The steer rate at which it cuts torque', live=True),
                         }
 
     self._params_file = '/data/op_params.json'
