@@ -102,6 +102,10 @@ class opParams:
                         'STEER_ERROR_MAX': Param(350, VT.number, 'Default is 350', live=True),
                         'steer_rate_fix': Param(True, bool, 'To restrict torque when steering rate goes above 100 deg/s', live=True),
                         'steer_rate_fix_rate': Param(100, int, 'The steer rate at which it cuts torque', live=True),
+                        'lat_p_gain': Param(.22, VT.number, 'proportional', live=True),
+                        'lat_i_gain': Param(.04125, VT.number, 'integral', live=True),
+                        'lat_d_gain': Param(1, VT.number, 'derivative', live=True),
+                        'lat_f_multiplier': Param(1, VT.number, 'feedforward multiplier', live=True)
                         }
 
     self._params_file = '/data/op_params.json'
