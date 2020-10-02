@@ -105,7 +105,8 @@ class opParams:
                         'lat_p_gain': Param(.22, VT.number, 'proportional', live=True),
                         'lat_i_gain': Param(.04125, VT.number, 'integral', live=True),
                         'lat_d_gain': Param(1, VT.number, 'derivative', live=True),
-                        'lat_f_multiplier': Param(1, VT.number, 'feedforward multiplier', live=True)
+                        'lat_f_multiplier': Param(1, VT.number, 'feedforward multiplier', live=True),
+                        'steer_actuator_delay': Param(0.12, VT.number, 'The steer actuator delay', live=True),
                         }
 
     self._params_file = '/data/op_params.json'
