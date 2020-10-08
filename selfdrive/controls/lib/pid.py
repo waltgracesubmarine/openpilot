@@ -34,17 +34,17 @@ class LatPIDController():
 
   @property
   def k_p(self):
-    return self.op_params.get('lat_p_gain')
+    return self.op_params.get('lat_p_gain') / (self.op_params.get('STEER_MAX') / 1500)
     # return interp(self.speed, self._k_p[0], self._k_p[1])
 
   @property
   def k_i(self):
-    return self.op_params.get('lat_i_gain')
+    return self.op_params.get('lat_i_gain') / (self.op_params.get('STEER_MAX') / 1500)
     # return interp(self.speed, self._k_i[0], self._k_i[1])
 
   @property
   def k_d(self):
-    return self.op_params.get('lat_d_gain')
+    return self.op_params.get('lat_d_gain') / (self.op_params.get('STEER_MAX') / 1500)
     # return interp(self.speed, self._k_d[0], self._k_d[1])
 
   def _check_saturation(self, control, check_saturation, error):
@@ -74,7 +74,7 @@ class LatPIDController():
     error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p
     d = self.k_d * (error - self.last_error)
-    self.f = feedforward * self.k_f * self.op_params.get('lat_f_multiplier')
+    self.f = feedforward * (self.k_f * self.op_params.get('lat_f_multiplier') / (self.op_params.get('STEER_MAX') / 1500))
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
