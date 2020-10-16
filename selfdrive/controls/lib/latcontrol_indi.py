@@ -1,6 +1,7 @@
 import math
 import numpy as np
 
+from common.op_params import opParams
 from cereal import log
 from common.realtime import DT_CTRL
 from common.numpy_fast import clip
@@ -11,6 +12,7 @@ from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 class LatControlINDI():
   def __init__(self, CP):
+    self.op_params = opParams()
     self.angle_steers_des = 0.
 
     A = np.matrix([[1.0, DT_CTRL, 0.0],
@@ -34,16 +36,28 @@ class LatControlINDI():
 
     self.enforce_rate_limit = CP.carName == "toyota"
 
-    self.RC = CP.lateralTuning.indi.timeConstant
-    self.G = CP.lateralTuning.indi.actuatorEffectiveness
-    self.outer_loop_gain = CP.lateralTuning.indi.outerLoopGain
-    self.inner_loop_gain = CP.lateralTuning.indi.innerLoopGain
     self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
 
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
 
     self.reset()
+
+  @property
+  def RC(self):
+    return self.op_params.get('timeConstant')
+
+  @property
+  def G(self):
+    return self.op_params.get('actuatorEffectiveness')
+
+  @property
+  def outer_loop_gain(self):
+    return self.op_params.get('outerLoopGain')
+
+  @property
+  def inner_loop_gain(self):
+    return self.op_params.get('innerLoopGain')
 
   def reset(self):
     self.delayed_output = 0.
