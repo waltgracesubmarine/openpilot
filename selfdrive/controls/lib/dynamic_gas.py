@@ -91,7 +91,8 @@ class DynamicGas:
     else:
       y = [0.35, 0.47, 0.43, 0.35, 0.3, 0.3, 0.3229, 0.34784, 0.36765, 0.38, 0.396, 0.409, 0.425, 0.478, 0.55, 0.621, 0.7]
       if self.candidate in [CAR_TOYOTA.PRIUS_2020, CAR_TOYOTA.RAV4_TSS2]:
-        y = [i * (1 - 0.2) for i in y]
+        y = [0.3304, 0.43401, 0.38823, 0.3088, 0.25851, 0.25234, 0.26496, 0.27827, 0.29412, 0.304, 0.3168, 0.3272, 0.34, 0.3824, 0.44, 0.4968, 0.56]
+        # from: [round(interp(idx, [0, 7], [1.18, 1.0]) * i, 5) for idx, i in enumerate(y_new)]
       else:
         y = [interp(i, [y[0], y[-1]], [1.15, 1.0]) * i for i in y]  # more gas at lower speeds
       self.supported_car = True
