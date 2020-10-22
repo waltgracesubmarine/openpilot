@@ -7,7 +7,7 @@ from sklearn import linear_model  # pylint: disable=import-error
 from tools.lib.route import Route
 from tools.lib.logreader import MultiLogIterator
 
-MIN_SAMPLES = 15 * 100
+MIN_SAMPLES = 30 * 100
 
 
 def to_signed(n, bits):
@@ -32,10 +32,11 @@ def get_eps_factor(lr, plot=False):
       elif m.address == 0x260 and m.src == 0:
         eps_torque = to_signed((m.dat[5] << 8) | m.dat[6], 16)
 
+    to_filter = False
     if engaged and torque_cmd is not None and eps_torque is not None:
-      # if abs(eps_torque - torque_cmd) <= 100:  # assume current factor is close enough
-      cmds.append(torque_cmd)
-      eps.append(eps_torque)
+      if abs(eps_torque - torque_cmd) <= 100 or not to_filter:  # assume current factor is close enough
+        cmds.append(torque_cmd)
+        eps.append(eps_torque)
     else:
       if len(cmds) > MIN_SAMPLES:
         break
@@ -60,13 +61,13 @@ if __name__ == "__main__":
   #           '14431dbeedbf3558%7C2020-10-19--12-35-29', 'e010b634f3d65cdb%7C2020-06-10--20-07-25', '14431dbeedbf3558%7C2020-10-19--22-55-58', '14431dbeedbf3558%7C2020-10-19--13-40-57',
   #           '14431dbeedbf3558%7C2020-10-19--14-18-32', '14431dbeedbf3558%7C2020-10-19--22-15-27', '14431dbeedbf3558%7C2020-10-19--12-16-53', '14431dbeedbf3558%7C2020-10-17--21-16-10',
   #           '14431dbeedbf3558%7C2020-10-17--13-32-42', '14431dbeedbf3558%7C2020-10-19--18-33-54', '14431dbeedbf3558%7C2020-10-19--15-23-23', '14431dbeedbf3558%7C2020-10-17--11-14-47']
-  to_use = ['a0defbc23933e4f8%7C2020-10-21--20-52-46', 'a0defbc23933e4f8%7C2020-10-21--20-59-45']
+  to_use = ['095142f13f39faf9|2020-10-20--15-08-39', '095142f13f39faf9|2020-10-13--15-13-21', '095142f13f39faf9|2020-10-13--04-56-24']
 
   for route in to_use:
     print('working on route: {}'.format(route))
-    r = Route(route)
-    lr = MultiLogIterator(r.log_paths(), wraparound=False)
     try:
+      r = Route(route)
+      lr = MultiLogIterator(r.log_paths(), wraparound=False)
       n = get_eps_factor(lr, plot="--plot" in sys.argv)
       print("\n{}: EPS torque factor: {}\n".format(route, n))
     except Exception as e:
