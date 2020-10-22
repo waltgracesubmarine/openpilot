@@ -54,6 +54,7 @@ def get_eps_factor(lr, plot=False):
   return scale_factor
 
 if __name__ == "__main__":
+  print(sys.argv)
   r = Route(sys.argv[1])
   lr = MultiLogIterator(r.log_paths(), wraparound=False)
   n = get_eps_factor(lr, plot="--plot" in sys.argv)
