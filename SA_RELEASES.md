@@ -1,9 +1,19 @@
+Stock Additions v0.5.4 - 2020-10-15 (0.7.7)
+===
+ * Make model path default grey when not engaged, only color when engaged
+ * About 1.6 seconds faster starting up (from a recent commit from stock)
+ * Colorful loading spinner: RGB!
+ * Revert back to original release2 driving model
+
 Stock Additions v0.5.3 - 2020-9-15 (0.7.7)
 ===
  * Properly set unsafe_mode in boardd. This might fix panda flashing issues for new users, since it won't be required
  * Separate 2020 Prius and add PID tune
+ * Support 2021 TSS2 Prius
  * Add param `standstill_hack` for stop and go hack
  * Add param `update_behavior` to change how SA updates. off never updates, auto reboots if there's an update, and alert shows a button offroad with changelog
+ * Retune TSS1 Corolla for better curve handling
+ * Tune TSS2 Corolla (INDI, thanks to birdman6450)
 
 Stock Additions v0.5.2 - 2020-9-11 (0.7.7)
 ===

@@ -74,7 +74,8 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.lateralTuning.init('indi')
         ret.lateralTuning.indi.innerLoopGain = 4.0
-        ret.lateralTuning.indi.outerLoopGain = 3.0
+        ret.lateralTuning.indi.outerLoopGainBP = [0]
+        ret.lateralTuning.indi.outerLoopGainV = [3.0]
         ret.lateralTuning.indi.timeConstant = 0.1 if ret.hasZss else 1.0
         ret.lateralTuning.indi.actuatorEffectiveness = 1.0
         ret.steerActuatorDelay = 0.5
@@ -95,7 +96,8 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.lateralTuning.init('indi')
         ret.lateralTuning.indi.innerLoopGain = 4.0
-        ret.lateralTuning.indi.outerLoopGain = 3.0
+        ret.lateralTuning.indi.outerLoopGainBP = [0]
+        ret.lateralTuning.indi.outerLoopGainV = [3.0]
         ret.lateralTuning.indi.timeConstant = 0.1 if ret.hasZss else 1.0
         ret.lateralTuning.indi.actuatorEffectiveness = 1.0
 
@@ -142,9 +144,9 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.lqr.l = [0.3233671, 0.3185757]
         ret.lateralTuning.lqr.dcGain = 0.002237852961363602
       else:
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.22], [0.04125]]
-        ret.lateralTuning.pid.kdV = [0.78]
-        ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.035]]
+        ret.lateralTuning.pid.kdV = [0.75]
+        ret.lateralTuning.pid.kf = 0.000084   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RX:
       stop_and_go = True
@@ -282,11 +284,12 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.init('indi')
         ret.steerRatio = 15.33
         tire_stiffness_factor = 0.996
+        ret.lateralTuning.indi.outerLoopGainBP = [20, 21]
+        ret.lateralTuning.indi.outerLoopGainV = [6, 15]
         ret.lateralTuning.indi.innerLoopGain = 6.0
-        ret.lateralTuning.indi.outerLoopGain = 15.0
         ret.lateralTuning.indi.timeConstant = 5.5
         ret.lateralTuning.indi.actuatorEffectiveness = 6.0
-        ret.steerActuatorDelay = 0.57
+        ret.steerActuatorDelay = 0.60
       else:
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
         ret.lateralTuning.pid.kdV = [9.0]
@@ -342,6 +345,20 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4070 * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
+
+    elif candidate == CAR.PRIUS_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 50
+      ret.wheelbase = 2.70
+      ret.steerRatio = 13.4  # unknown end-to-end spec
+      tire_stiffness_factor = 0.6371  # hand-tune
+      ret.steerActuatorDelay = 0.55
+      ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
+
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.5], [0.15]]
+      ret.lateralTuning.pid.kdBP = [0.]
+      ret.lateralTuning.pid.kdV = [2.]
+      ret.lateralTuning.pid.kf = 0.00007818594
 
     ret.steerRateCost = 0.5 if ret.hasZss else 1.0
     ret.centerToFront = ret.wheelbase * 0.44
