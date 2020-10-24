@@ -79,7 +79,7 @@ class LatPIDController():
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
-      i = self.i + d + (error * self.k_i * self.i_rate)
+      i = self.i + error * self.k_i * self.i_rate
       control = self.p + self.f + i
 
       if self.convert is not None:
@@ -92,7 +92,7 @@ class LatPIDController():
          not freeze_integrator:
         self.i = i
 
-    control = self.p + self.f + self.i
+    control = self.p + self.f + self.i + d
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
 
