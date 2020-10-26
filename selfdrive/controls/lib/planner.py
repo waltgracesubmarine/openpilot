@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
+
+from common.op_params import opParams
 from common.params import Params
 from common.numpy_fast import interp
 
@@ -64,13 +66,103 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
+def mean(l):
+  return sum(l) / len(l)
+
+
+def calc_ttc(v_ego, a_ego, x_lead, v_lead, a_lead):
+  v_rel = v_ego - v_lead
+  a_rel = a_ego - a_lead
+
+  # assuming that closing gap ARel comes from lead vehicle decel,
+  # then limit ARel so that v_lead will get to zero in no sooner than t_decel.
+  # This helps underweighting ARel when v_lead is close to zero.
+  t_decel = 2.
+  a_rel = min(a_rel, v_lead / t_decel)
+
+  # delta of the quadratic equation to solve for ttc
+  delta = v_rel**2 + 2 * x_lead * a_rel
+
+  # assign an arbitrary high ttc value if there is no solution to ttc
+  if delta < 0.1 or (math.sqrt(delta) + v_rel < 0.1):
+    return False
+  else:
+    return 2 * x_lead / (math.sqrt(delta) + v_rel)
+
+
+class DynamicSpeed:  # todo: include DynamicLaneSpeed for adjacent lane slowing, or just merge the two together
+  def __init__(self):
+    self.RATE = 1 / 20.
+    self.MIN_SPEED = 10 * CV.MPH_TO_MS
+    self.MAX_TTC = 12
+    self.op_params = opParams()
+
+    self.reset()
+
+  def reset(self):
+    self.v_mpc = 0
+    self.a_mpc = 0
+    self.slowest = False
+    self.valid = False
+
+  def update(self, v_ego, a_ego, lead, following):
+    self.v_ego = v_ego
+    self.a_ego = a_ego
+    self.v_lead = lead.vLead
+    self.a_lead = lead.aLeadK
+    self.x_lead = lead.dRel
+
+    if self.v_ego >= self.MIN_SPEED and lead.status and self.op_params.get('use_dynamic_speed'):
+      self._calculate_speed()  # also sets valid
+    else:
+      self.reset()
+
+  def _calculate_speed(self):
+    """This will calculate the immediate speed of ego based on lead"""
+    # mods = []
+    # if v_rel <= -1 * CV.MPH_TO_MS:
+    #   v_rels = [i * CV.MPH_TO_MS for i in [-20, -10, -5, -2.5, -1]]
+    #   multipliers = [3.25, 2, 1.5, 1, .5]  # the slower the lead is, the quicker we get to half of the immediate v_rel
+    #   # mods.append(abs(v_rel / 2) * interp(v_rel, v_rels, multipliers))  # todo: actually we could just use weighted average instead of multipliers. w. avg. v_ego and v_lead (maybe?)
+    #   mods.append(interp(v_rel, v_rels, multipliers))
+    #
+    # if self.a_lead < 0.5 * CV.MPH_TO_MS:  # todo: factor in distance
+    #   pass
+
+    v_rel = self.v_lead - self.v_ego
+    if v_rel <= 0 * CV.MPH_TO_MS:
+      ttc = calc_ttc(self.v_ego, self.a_ego, self.x_lead, self.v_lead, self.a_lead)
+      if ttc is not False and ttc < self.MAX_TTC:  # ttc available and below threshold
+        change = abs(v_rel) ** (self.op_params['v_rel_exp']) / (ttc * self.op_params['ttc_multiplier'])
+        if self.slowest:
+          print('SLOWEST: ', end='')
+        else:
+          print('NOT SLOWEST: ', end='')
+        print('TTC: {}, CHNG: {} mph'.format(round(ttc, 3), round(change * CV.MS_TO_MPH, 3)))
+        self.v_mpc = self.v_ego - (change * self.op_params['rate_out_to'])
+        self.a_mpc = -change  # this is for 1 second, should it be interpped to 0.05?
+        self.valid = True
+        return
+    self.valid = False
+
+    # if len(mods):
+    #   # mod = mean(mods)
+    #   mod = mods[0]  # todo: this is temp
+    #   self.v_mpc = self.v_ego - (mod * self.PER_SECOND)
+    #   self.valid = True
+    # else:
+    #   self.valid = False
+
+
 class Planner():
   def __init__(self, CP):
     self.CP = CP
+    self.op_params = opParams()
 
     self.mpc1 = LongitudinalMpc(1)
     self.mpc2 = LongitudinalMpc(2)
     self.mpc_model = LongitudinalMpcModel()
+    self.dynamic_speed = DynamicSpeed()
 
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
@@ -91,12 +183,14 @@ class Planner():
   def choose_solution(self, v_cruise_setpoint, enabled, model_enabled):
     if enabled:
       solutions = {'cruise': self.v_cruise}
-      if self.mpc1.prev_lead_status:
+      if self.mpc1.prev_lead_status and self.op_params.get('use_mpc'):
         solutions['mpc1'] = self.mpc1.v_mpc
-      if self.mpc2.prev_lead_status:
+      if self.mpc2.prev_lead_status and self.op_params.get('use_mpc'):
         solutions['mpc2'] = self.mpc2.v_mpc
       if self.mpc_model.valid and model_enabled:
         solutions['model'] = self.mpc_model.v_mpc
+      if self.dynamic_speed.valid:
+        solutions['dynamicSpeed'] = self.dynamic_speed.v_mpc
 
       slowest = min(solutions, key=solutions.get)
 
@@ -114,6 +208,11 @@ class Planner():
       elif slowest == 'model':
         self.v_acc = self.mpc_model.v_mpc
         self.a_acc = self.mpc_model.a_mpc
+      elif slowest == 'dynamicSpeed':
+        self.v_acc = self.dynamic_speed.v_mpc
+        self.a_acc = self.dynamic_speed.a_mpc
+
+      self.dynamic_speed.slowest = slowest == 'dynamicSpeed'  # for printing/debugging
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, self.mpc_model.v_mpc_future, v_cruise_setpoint])
 
@@ -134,6 +233,7 @@ class Planner():
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
+    self.dynamic_speed.update(v_ego, sm['carState'].aEgo, lead_1, following)
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:  # gasPress is to avoid hard decel after user accelerates with gas while engaged
