@@ -1,3 +1,4 @@
+import numpy as np
 from cereal import messaging
 from common.numpy_fast import interp
 from common.op_params import opParams
